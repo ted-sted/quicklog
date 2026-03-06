@@ -281,8 +281,8 @@ const LOAD_DAYS = 30;                 // 何日前まで表示するか
 // 状態
 // ============================================================
 let tokenClient;
-let accessToken   = sessionStorage.getItem('ql_token') || null;
-let tokenExpiry   = Number(sessionStorage.getItem('ql_expiry') || 0);
+let accessToken   = localStorage.getItem('ql_token') || null;
+let tokenExpiry   = Number(localStorage.getItem('ql_expiry') || 0);
 let currentEditId = null;
 
 // ============================================================
@@ -349,17 +349,22 @@ function initGIS() {
             if (resp.error) { showError('認証エラー: ' + resp.error); return; }
             accessToken = resp.access_token;
             tokenExpiry = Date.now() + (resp.expires_in * 1000);
-            sessionStorage.setItem('ql_token', accessToken);
-            sessionStorage.setItem('ql_expiry', String(tokenExpiry));
+            localStorage.setItem('ql_token', accessToken);
+            localStorage.setItem('ql_expiry', String(tokenExpiry));
+            localStorage.setItem('ql_logged_in', '1');
             showApp();
             await loadEntries();
         },
     });
 
-    // 既存トークンが有効なら直接アプリ画面へ
+    // 有効なトークンがあればそのままアプリ画面へ
     if (isTokenValid()) {
         showApp();
         loadEntries();
+    }
+    // 以前ログインしていたらサイレント再認証を試みる（画面を出さずにトークン取得）
+    else if (localStorage.getItem('ql_logged_in')) {
+        tokenClient.requestAccessToken({ prompt: '' });
     }
 }
 
@@ -387,8 +392,9 @@ function showApp() {
 
 function showLogin() {
     accessToken = null;
-    sessionStorage.removeItem('ql_token');
-    sessionStorage.removeItem('ql_expiry');
+    localStorage.removeItem('ql_token');
+    localStorage.removeItem('ql_expiry');
+    localStorage.removeItem('ql_logged_in');
     document.getElementById('appScreen').style.display = 'none';
     document.getElementById('loginScreen').style.display = '';
 }
