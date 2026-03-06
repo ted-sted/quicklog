@@ -202,8 +202,15 @@
 </script>
 <!-- ==================================== -->
 
+<!-- Splash Screen（起動時ローディング） -->
+<div id="splashScreen" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+    <div style="font-size:52px;">📋</div>
+    <div style="font-size:22px;font-weight:700;letter-spacing:2px;color:#1c1c2e;">QuickLog</div>
+    <div style="width:32px;height:32px;border:3px solid #e0e0e8;border-top-color:#1c1c2e;border-radius:50%;animation:spin 0.8s linear infinite;margin-top:8px;"></div>
+</div>
+
 <!-- Login Screen -->
-<div id="loginScreen">
+<div id="loginScreen" style="display:none;">
     <div class="login-logo">📋</div>
     <div class="login-title">QuickLog</div>
     <div class="login-sub">Googleカレンダーに<br>行動をすばやく記録するアプリ</div>
@@ -346,7 +353,11 @@ function initGIS() {
         client_id: CLIENT_ID,
         scope: SCOPES,
         callback: async (resp) => {
-            if (resp.error) { showError('認証エラー: ' + resp.error); return; }
+            if (resp.error) {
+                // サイレント認証失敗はエラー表示せずログイン画面へ
+                showLogin();
+                return;
+            }
             accessToken = resp.access_token;
             tokenExpiry = Date.now() + (resp.expires_in * 1000);
             localStorage.setItem('ql_token', accessToken);
@@ -359,12 +370,18 @@ function initGIS() {
 
     // 有効なトークンがあればそのままアプリ画面へ
     if (isTokenValid()) {
+        document.getElementById('splashScreen').style.display = 'none';
         showApp();
         loadEntries();
     }
-    // 以前ログインしていたらサイレント再認証を試みる（画面を出さずにトークン取得）
+    // 以前ログインしていた → スプラッシュ表示しつつサイレント認証を試みる
     else if (localStorage.getItem('ql_logged_in')) {
+        showSplash();
         tokenClient.requestAccessToken({ prompt: '' });
+    }
+    // 初回 → ログイン画面
+    else {
+        showLogin();
     }
 }
 
@@ -395,8 +412,15 @@ function showLogin() {
     localStorage.removeItem('ql_token');
     localStorage.removeItem('ql_expiry');
     localStorage.removeItem('ql_logged_in');
-    document.getElementById('appScreen').style.display = 'none';
-    document.getElementById('loginScreen').style.display = '';
+    document.getElementById('splashScreen').style.display  = 'none';
+    document.getElementById('appScreen').style.display    = 'none';
+    document.getElementById('loginScreen').style.display  = 'flex';
+}
+
+function showSplash() {
+    document.getElementById('splashScreen').style.display  = 'flex';
+    document.getElementById('loginScreen').style.display  = 'none';
+    document.getElementById('appScreen').style.display    = 'none';
 }
 
 // ============================================================
