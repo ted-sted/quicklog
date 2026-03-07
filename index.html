@@ -192,6 +192,70 @@
             display: none;
         }
         .error-banner.show { display: block; }
+
+        /* ── Mode Toggle ── */
+        .mode-toggle {
+            display: flex; gap: 6px; margin-bottom: 8px;
+        }
+        .mode-btn {
+            flex: 1; padding: 7px 0; border-radius: 10px; border: none;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            font-family: inherit; transition: background 0.18s, color 0.18s;
+            background: #f0f0f5; color: #888;
+        }
+        .mode-btn.active-log  { background: #1c1c2e; color: white; }
+        .mode-btn.active-plan { background: #0a84ff; color: white; }
+
+        /* ── Schedule datetime row ── */
+        .schedule-row {
+            display: none; margin-bottom: 8px;
+        }
+        .schedule-row.show { display: flex; }
+        .schedule-input {
+            flex: 1; border: 1.5px solid #0a84ff; border-radius: 12px;
+            padding: 9px 14px; font-size: 14px; font-family: inherit;
+            outline: none; background: #f0f6ff; color: #1c1c2e;
+        }
+
+        /* ── Location button ── */
+        .loc-btn {
+            width: 44px; height: 44px; border-radius: 50%; border: none;
+            background: #f0f0f5; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; flex-shrink: 0; transition: transform 0.12s, background 0.2s;
+        }
+        .loc-btn:active { transform: scale(0.90); }
+        .loc-btn.loading { animation: pulse 1s infinite; }
+
+        /* ── Location Modal ── */
+        .loc-modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 300;
+            display: flex; align-items: flex-end;
+            opacity: 0; pointer-events: none; transition: opacity 0.22s;
+        }
+        .loc-modal-overlay.active { opacity: 1; pointer-events: all; }
+        .loc-modal {
+            background: white; border-radius: 22px 22px 0 0;
+            padding: 20px 18px;
+            padding-bottom: max(28px, env(safe-area-inset-bottom));
+            width: 100%; transform: translateY(100%);
+            transition: transform 0.28s cubic-bezier(0.32,0.72,0,1);
+        }
+        .loc-modal-overlay.active .loc-modal { transform: translateY(0); }
+        .loc-item {
+            padding: 14px 16px; border-radius: 12px; margin-bottom: 8px;
+            background: #f9f9fb; cursor: pointer; font-size: 15px;
+            border: 1.5px solid transparent; transition: border-color 0.15s, background 0.15s;
+        }
+        .loc-item:active { background: #e8f0fe; border-color: #0a84ff; }
+        .loc-item-label { font-size: 11px; color: #999; font-weight: 700; margin-bottom: 3px; }
+        .loc-item-name  { color: #1c1c2e; font-weight: 500; }
+
+        /* ── Future event card ── */
+        .entry-card.future {
+            background: #f0f6ff; border-left: 3px solid #0a84ff;
+        }
+        .entry-card.future .entry-time { color: #0a84ff; }
     </style>
 </head>
 <body>
@@ -240,7 +304,18 @@
     </div>
 
     <div class="input-area">
+        <!-- モード切替 -->
+        <div class="mode-toggle">
+            <button class="mode-btn active-log" id="modeBtnLog">📝 今すぐ記録</button>
+            <button class="mode-btn" id="modeBtnPlan">⏰ 予定を追加</button>
+        </div>
+        <!-- 予定モード：日時選択 -->
+        <div class="schedule-row" id="scheduleRow">
+            <input type="datetime-local" class="schedule-input" id="scheduleInput">
+        </div>
+        <!-- 入力行 -->
         <div class="input-row">
+            <button class="loc-btn" id="locBtn" title="現在地を挿入">📍</button>
             <button class="mic-btn" id="micBtn" title="音声入力">🎤</button>
             <textarea
                 class="text-input" id="textInput"
@@ -249,6 +324,18 @@
             ></textarea>
             <button class="submit-btn" id="submitBtn" disabled>↑</button>
         </div>
+    </div>
+</div>
+
+<!-- Location Modal -->
+<div class="loc-modal-overlay" id="locModalOverlay">
+    <div class="loc-modal">
+        <div class="modal-drag-handle"></div>
+        <div class="modal-header">
+            <span class="modal-title">📍 現在地を選択</span>
+            <button class="modal-close" id="locModalClose">✕</button>
+        </div>
+        <div id="locCandidates"></div>
     </div>
 </div>
 
@@ -467,7 +554,7 @@ async function loadEntries() {
 
     try {
         const timeMin = new Date(Date.now() - LOAD_DAYS * 86400000).toISOString();
-        const timeMax = new Date(Date.now() + 7 * 86400000).toISOString();
+        const timeMax = new Date(Date.now() + 30 * 86400000).toISOString(); // 未来30日まで
 
         const params = new URLSearchParams({
             timeMin, timeMax,
@@ -487,7 +574,7 @@ async function loadEntries() {
     }
 }
 
-async function createEvent(content, timestamp) {
+async function createEvent(content, timestamp, colorId = null) {
     const dt    = new Date(timestamp).toISOString();
     const dtEnd = new Date(timestamp + 60000).toISOString();
 
@@ -498,6 +585,7 @@ async function createEvent(content, timestamp) {
             start: { dateTime: dt, timeZone: TZ },
             end:   { dateTime: dtEnd, timeZone: TZ },
             extendedProperties: { private: { source: APP_TAG } },
+            ...(colorId ? { colorId } : {}),
         }),
     });
 }
@@ -533,17 +621,22 @@ function renderList(events) {
         return;
     }
 
-    // 新しい順にソート
-    const sorted = [...events].sort((a, b) => {
-        return new Date(b.start.dateTime || b.start.date) - new Date(a.start.dateTime || a.start.date);
-    });
+    const now = Date.now();
+
+    // 未来の予定を上、過去の記録を新しい順に
+    const future = [...events].filter(ev => new Date(ev.start.dateTime || ev.start.date).getTime() > now)
+                              .sort((a, b) => new Date(a.start.dateTime) - new Date(b.start.dateTime));
+    const past   = [...events].filter(ev => new Date(ev.start.dateTime || ev.start.date).getTime() <= now)
+                              .sort((a, b) => new Date(b.start.dateTime) - new Date(a.start.dateTime));
+    const sorted = [...future, ...past];
 
     container.innerHTML = '';
     let lastLabel = null;
 
     sorted.forEach(ev => {
-        const ts    = new Date(ev.start.dateTime || ev.start.date).getTime();
-        const label = fmtDateLabel(ts);
+        const ts       = new Date(ev.start.dateTime || ev.start.date).getTime();
+        const isFuture = ts > now;
+        const label    = isFuture ? '⏰ 予定' : fmtDateLabel(ts);
 
         if (label !== lastLabel) {
             const hdr = document.createElement('div');
@@ -554,9 +647,9 @@ function renderList(events) {
         }
 
         const card = document.createElement('div');
-        card.className = 'entry-card';
+        card.className = 'entry-card' + (isFuture ? ' future' : '');
         card.innerHTML = `
-            <div class="entry-time">${fmtTime(ts)}</div>
+            <div class="entry-time">${isFuture ? fmtDateLabel(ts).replace('⏰ ','') + '<br>' : ''}${fmtTime(ts)}</div>
             <div class="entry-content">${escHtml(ev.summary || '')}</div>
             <button class="entry-edit-btn" aria-label="編集">✏️</button>
         `;
@@ -591,17 +684,28 @@ async function submitEntry() {
     const content = textInput.value.trim();
     if (!content) return;
 
+    const isPlan = document.getElementById('modeBtnPlan').classList.contains('active-plan');
+
+    let timestamp = Date.now();
+    if (isPlan) {
+        const dtVal = document.getElementById('scheduleInput').value;
+        if (!dtVal) { showError('予定の日時を選択してください'); return; }
+        timestamp = new Date(dtVal).getTime();
+        if (isNaN(timestamp)) { showError('日時が正しくありません'); return; }
+    }
+
     submitBtn.disabled = true;
     submitBtn.textContent = '…';
 
     try {
-        await createEvent(content, Date.now());
+        // 予定はcolorId "7"（ピーコック＝青）、記録はデフォルト
+        await createEvent(content, timestamp, isPlan ? '7' : null);
         textInput.value = '';
         textInput.style.height = 'auto';
         textInput.focus();
         await loadEntries();
         document.getElementById('listContainer').scrollTop = 0;
-        showToast('記録しました ✓');
+        showToast(isPlan ? '予定を追加しました ✓' : '記録しました ✓');
     } catch (e) {
         showError('保存エラー: ' + e.message);
     } finally {
@@ -643,6 +747,117 @@ if (SR) {
     micBtn.style.opacity = '0.3';
     micBtn.title = '音声入力非対応ブラウザ';
 }
+
+// ============================================================
+// Mode Toggle（記録 / 予定）
+// ============================================================
+const modeBtnLog  = document.getElementById('modeBtnLog');
+const modeBtnPlan = document.getElementById('modeBtnPlan');
+const scheduleRow = document.getElementById('scheduleRow');
+const scheduleInput = document.getElementById('scheduleInput');
+
+function setMode(mode) {
+    if (mode === 'log') {
+        modeBtnLog.classList.add('active-log');
+        modeBtnLog.classList.remove('active-plan');
+        modeBtnPlan.classList.remove('active-plan');
+        scheduleRow.classList.remove('show');
+        document.getElementById('textInput').placeholder = '何をした？（Enterで即記録）';
+    } else {
+        modeBtnPlan.classList.add('active-plan');
+        modeBtnLog.classList.remove('active-log');
+        scheduleRow.classList.add('show');
+        // デフォルト：明日の現在時刻
+        if (!scheduleInput.value) {
+            const d = new Date(Date.now() + 86400000);
+            const pad = n => String(n).padStart(2,'0');
+            scheduleInput.value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        }
+        document.getElementById('textInput').placeholder = '予定の内容を入力';
+    }
+}
+
+modeBtnLog.addEventListener('click',  () => setMode('log'));
+modeBtnPlan.addEventListener('click', () => setMode('plan'));
+
+// ============================================================
+// Location（現在地挿入）
+// ============================================================
+const locBtn          = document.getElementById('locBtn');
+const locModalOverlay = document.getElementById('locModalOverlay');
+
+function closeLocModal() { locModalOverlay.classList.remove('active'); }
+
+document.getElementById('locModalClose').addEventListener('click', closeLocModal);
+locModalOverlay.addEventListener('click', e => { if (e.target === locModalOverlay) closeLocModal(); });
+
+locBtn.addEventListener('click', async () => {
+    if (!navigator.geolocation) { showError('位置情報が利用できません'); return; }
+
+    locBtn.classList.add('loading');
+    locBtn.textContent = '⏳';
+
+    try {
+        const pos = await new Promise((resolve, reject) =>
+            navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 })
+        );
+        const { latitude: lat, longitude: lng } = pos.coords;
+
+        const res  = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=ja&zoom=18`,
+            { headers: { 'User-Agent': 'QuickLog/1.0' } }
+        );
+        const data = await res.json();
+        const addr = data.address || {};
+
+        // 候補を組み立て
+        const candidates = [];
+        const place = addr.amenity || addr.shop || addr.office || addr.tourism || addr.leisure || addr.building;
+        const road  = addr.road || addr.pedestrian || addr.footway;
+        const area  = addr.suburb || addr.neighbourhood || addr.quarter || addr.city_district;
+        const city  = addr.city || addr.town || addr.village || addr.county;
+
+        if (place)             candidates.push({ label: '施設名',       name: place });
+        if (place && road)     candidates.push({ label: '施設＋通り',    name: `${place}（${road}）` });
+        if (road && city)      candidates.push({ label: 'エリア',        name: `${road}、${area || city}` });
+        if (city)              candidates.push({ label: '市区町村',      name: area ? `${area}、${city}` : city });
+
+        if (candidates.length === 0) {
+            candidates.push({ label: '取得した住所', name: data.display_name?.split(',')[0] || '不明' });
+        }
+
+        // モーダル表示
+        const container = document.getElementById('locCandidates');
+        container.innerHTML = '';
+        candidates.forEach(c => {
+            const item = document.createElement('div');
+            item.className = 'loc-item';
+            item.innerHTML = `<div class="loc-item-label">${c.label}</div><div class="loc-item-name">${c.name}</div>`;
+            item.addEventListener('click', () => {
+                const input = document.getElementById('textInput');
+                const sep   = input.value.trim() ? ' ' : '';
+                input.value += sep + c.name;
+                input.style.height = 'auto';
+                input.style.height = Math.min(input.scrollHeight, 110) + 'px';
+                document.getElementById('submitBtn').disabled = !input.value.trim();
+                closeLocModal();
+                input.focus();
+            });
+            container.appendChild(item);
+        });
+
+        locModalOverlay.classList.add('active');
+
+    } catch (err) {
+        const msg = err.code === 1 ? '位置情報の許可が必要です' :
+                    err.code === 2 ? '位置情報を取得できませんでした' :
+                    err.code === 3 ? '位置情報の取得がタイムアウトしました' : '位置情報エラー';
+        showError(msg);
+    } finally {
+        locBtn.classList.remove('loading');
+        locBtn.textContent = '📍';
+    }
+});
 
 // ============================================================
 // Edit Modal
