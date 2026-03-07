@@ -503,6 +503,24 @@ function showApp() {
     const app = document.getElementById('appScreen');
     app.style.display = 'flex';
     setTimeout(() => document.getElementById('textInput').focus(), 300);
+    // マイク権限を起動時に一度取得してキャッシュ（毎回許可ダイアログを防ぐ）
+    if (navigator.mediaDevices?.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+                stream.getTracks().forEach(t => t.stop());
+                // Web Speech API も事前に起動→即停止してiOS権限キャッシュを温める
+                const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (SR) {
+                    const warmup = new SR();
+                    warmup.lang = 'ja-JP';
+                    warmup.onresult = () => {};
+                    warmup.onerror = () => {};
+                    warmup.onend = () => {};
+                    try { warmup.start(); setTimeout(() => { try { warmup.stop(); } catch(e){} }, 200); } catch(e) {}
+                }
+            })
+            .catch(() => {}); // 拒否されても無視
+    }
 }
 
 function showLogin() {
@@ -698,10 +716,11 @@ async function submitEntry() {
     submitBtn.textContent = '…';
 
     try {
-        // 予定はcolorId "7"（ピーコック＝青）、記録はデフォルト
-        await createEvent(content, timestamp, isPlan ? '7' : null);
+        // 予定はcolorId "3"（タンジェリン＝オレンジ）、記録はデフォルト
+        await createEvent(content, timestamp, isPlan ? '3' : null);
         textInput.value = '';
         textInput.style.height = 'auto';
+        if (isPlan) setMode('log'); // 予定送信後は記録モードに戻す
         textInput.focus();
         await loadEntries();
         document.getElementById('listContainer').scrollTop = 0;
