@@ -220,10 +220,12 @@
 <!-- App Screen -->
 <div id="appScreen" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
     <div class="header">
-        <h1>QuickLog</h1>
+        <div style="display:flex;align-items:center;gap:10px;">
+            <h1>QuickLog</h1>
+            <a href="https://calendar.google.com" target="_blank" style="font-size:20px;text-decoration:none;opacity:0.8;" title="Googleカレンダーを開く">📅</a>
+        </div>
         <div class="header-right">
             <span class="entry-count" id="entryCount">読込中…</span>
-            <a href="https://calendar.google.com" target="_blank" style="font-size:20px;text-decoration:none;" title="Googleカレンダーを開く">📅</a>
             <button class="signout-btn" id="signoutBtn">ログアウト</button>
         </div>
     </div>
@@ -378,6 +380,14 @@ function initGIS() {
     // 以前ログインしていた → スプラッシュ表示しつつサイレント認証を試みる
     else if (localStorage.getItem('ql_logged_in')) {
         showSplash();
+        // タイムアウト：4秒で応答がなければログイン画面へ
+        const silentAuthTimer = setTimeout(() => showLogin(), 4000);
+        const origCallback = tokenClient.callback;
+        tokenClient.callback = async (resp) => {
+            clearTimeout(silentAuthTimer);
+            tokenClient.callback = origCallback;
+            await origCallback(resp);
+        };
         tokenClient.requestAccessToken({ prompt: '' });
     }
     // 初回 → ログイン画面
