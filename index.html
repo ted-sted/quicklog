@@ -389,35 +389,39 @@ function openDB() {
 }
 
 function dbPut(entry) {
-    return new Promise(resolve => {
-        const tx = db.transaction(STORE, 'readwrite');
+    return new Promise(function(resolve, reject) {
+        var tx = db.transaction(STORE, 'readwrite');
         tx.objectStore(STORE).put(entry);
         tx.oncomplete = resolve;
+        tx.onerror = function() { reject(tx.error); };
     });
 }
 
 function dbDelete(id) {
-    return new Promise(resolve => {
-        const tx = db.transaction(STORE, 'readwrite');
+    return new Promise(function(resolve, reject) {
+        var tx = db.transaction(STORE, 'readwrite');
         tx.objectStore(STORE).delete(id);
         tx.oncomplete = resolve;
+        tx.onerror = function() { reject(tx.error); };
     });
 }
 
 function getAllEntries() {
-    return new Promise(resolve => {
-        const req = db.transaction(STORE, 'readonly').objectStore(STORE).getAll();
-        req.onsuccess = () => {
+    return new Promise(function(resolve) {
+        var tx  = db.transaction(STORE, 'readonly');
+        var req = tx.objectStore(STORE).getAll();
+        req.onsuccess = function() {
             // 旧フォーマット（quicklog.html由来）のエントリを正規化
-            const entries = (req.result || []).map(e => ({
-                gcalId:      null,
-                endTimestamp: null,
-                colorId:     null,
-                syncStatus:  'pending', // デフォルト：未同期扱い
-                ...e,                   // 既存フィールドで上書き
-            }));
+            var raw = req.result || [];
+            var entries = raw.map(function(e) {
+                return Object.assign(
+                    { gcalId: null, endTimestamp: null, colorId: null, syncStatus: 'pending' },
+                    e
+                );
+            });
             resolve(entries);
         };
+        req.onerror = function() { resolve([]); };
     });
 }
 
@@ -557,7 +561,7 @@ async function calFetch(path, options = {}) {
     if (res.status === 401) { accessToken = null; tokenExpiry = 0; return null; }
     if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error?.message || `HTTP ${res.status}`);
+        throw new Error((err && err.error && err.error.message) || ('HTTP ' + res.status));
     }
     if (res.status === 204) return null;
     return res.json();
@@ -632,7 +636,7 @@ async function doSync() {
                     await gcalUpdate(entry);
                 } else {
                     const result = await gcalCreate(entry);
-                    if (result?.id) entry.gcalId = result.id;
+                    if (result && result.id) entry.gcalId = result.id;
                 }
                 entry.syncStatus = 'synced';
                 await dbPut(entry);
@@ -701,7 +705,7 @@ async function doImport() {
         for (const ev of events) {
             if (existingGcalIds.has(ev.id)) continue; // 重複スキップ
             const ts    = new Date(ev.start.dateTime || ev.start.date).getTime();
-            const endTs = ev.end?.dateTime ? new Date(ev.end.dateTime).getTime() : null;
+            const endTs = (ev.end && ev.end.dateTime) ? new Date(ev.end.dateTime).getTime() : null;
             await dbPut({
                 id:          genId(),
                 gcalId:      ev.id,
@@ -803,12 +807,11 @@ submitBtn.addEventListener('click', submitEntry);
 async function submitEntry() {
     const content = textInput.value.trim();
     if (!content) return;
-    submitBtn.disabled = true;
 
     const isPlan = document.getElementById('modeBtnPlan').classList.contains('active-plan');
-    let timestamp    = Date.now();
-    let endTimestamp = null;
-    let colorId      = null;
+    var timestamp    = Date.now();
+    var endTimestamp = null;
+    var colorId      = null;
 
     if (isPlan) {
         const dtVal    = document.getElementById('scheduleInput').value;
@@ -824,6 +827,9 @@ async function submitEntry() {
         }
         colorId = '3'; // オレンジ（予定）
     }
+
+    // バリデーション通過後に無効化（早期returnの場合はボタンが残る）
+    submitBtn.disabled = true;
 
     const entry = {
         id:          genId(),
@@ -964,7 +970,7 @@ locBtn.addEventListener('click', async () => {
         if (road && city)      candidates.push({ label: 'エリア',     name: `${road}、${area || city}` });
         if (city)              candidates.push({ label: '市区町村',   name: area ? `${area}、${city}` : city });
         if (candidates.length === 0)
-            candidates.push({ label: '取得した住所', name: data.display_name?.split(',')[0] || '不明' });
+            candidates.push({ label: '取得した住所', name: (data.display_name ? data.display_name.split(',')[0] : '') || '不明' });
 
         const container = document.getElementById('locCandidates');
         container.innerHTML = '';
@@ -1071,16 +1077,20 @@ document.getElementById('signoutBtn').addEventListener('click', () => {
 // ============================================================
 // Init（認証不要で即起動）
 // ============================================================
-window.addEventListener('load', async () => {
+async function appInit() {
     try {
-        db = await openDB();
+        if (!db) db = await openDB();
         await renderList();
         await updateSyncBadge();
     } catch(err) {
-        document.getElementById('errorBanner').textContent = 'データベース初期化エラー: ' + err.message;
+        document.getElementById('errorBanner').textContent = 'データベースエラー: ' + err.message;
         document.getElementById('errorBanner').classList.add('show');
     }
-    setTimeout(() => textInput.focus(), 150);
+}
+
+window.addEventListener('load', async function() {
+    await appInit();
+    setTimeout(function() { textInput.focus(); }, 150);
 
     // マイク権限キャッシュ（起動音の原因になるSR.start()は使わない）
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -1090,6 +1100,14 @@ window.addEventListener('load', async () => {
     }
 
     initGIS(); // バックグラウンドでGIS初期化（同期ボタン押下に備える）
+});
+
+// bfcache（ブラウザの戻る/前進キャッシュ）からの復帰時に再描画
+// → カレンダーアプリ等から戻ったときにブランク画面になる問題を解消
+window.addEventListener('pageshow', async function(event) {
+    if (event.persisted) {
+        await appInit();
+    }
 });
 </script>
 </body>
