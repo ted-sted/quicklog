@@ -18,10 +18,8 @@
             display: flex; flex-direction: column; overflow: hidden;
         }
 
-        /* ── App Screen ── */
         #appScreen { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* ── Header ── */
         .header {
             background: #1c1c2e; color: white;
             padding: 14px 16px 12px;
@@ -36,12 +34,6 @@
             background: rgba(255,255,255,0.1);
             padding: 3px 9px; border-radius: 20px;
         }
-        .signout-btn {
-            background: none; border: none; color: rgba(255,255,255,0.5);
-            font-size: 12px; cursor: pointer; padding: 3px 0;
-        }
-
-        /* ── Sync Button + Badge ── */
         .cal-btn-wrap {
             position: relative; display: inline-flex; align-items: center;
         }
@@ -61,7 +53,6 @@
             border: 2px solid #1c1c2e;
         }
 
-        /* ── Error Banner ── */
         .error-banner {
             background: #ff3b30; color: white;
             padding: 10px 16px; font-size: 13px; text-align: center;
@@ -69,7 +60,6 @@
         }
         .error-banner.show { display: block; }
 
-        /* ── List ── */
         .list-container {
             flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
             padding: 6px 12px 8px;
@@ -78,15 +68,6 @@
             text-align: center; color: #aaa; margin-top: 80px;
             font-size: 15px; line-height: 2;
         }
-        .import-btn {
-            display: inline-block; margin-top: 20px;
-            background: #1c1c2e; color: white;
-            border: none; border-radius: 14px;
-            padding: 13px 24px; font-size: 14px; font-weight: 700;
-            cursor: pointer; font-family: inherit;
-            transition: opacity 0.15s;
-        }
-        .import-btn:active { opacity: 0.7; }
         .date-group-header {
             font-size: 11px; color: #999; font-weight: 700;
             padding: 14px 4px 6px; letter-spacing: 0.8px;
@@ -106,13 +87,10 @@
         }
         .entry-content { flex: 1; font-size: 15px; color: #1c1c2e; line-height: 1.55; word-break: break-word; }
         .entry-edit-btn { background: none; border: none; font-size: 16px; padding: 2px 0 2px 6px; color: #ccc; cursor: pointer; flex-shrink: 0; }
-        .pending-dot { font-size: 8px; color: #c0c0cc; vertical-align: middle; margin-left: 4px; }
 
-        /* ── Future event card ── */
         .entry-card.future { background: #f0f6ff; border-left: 3px solid #0a84ff; }
         .entry-card.future .entry-time { color: #0a84ff; }
 
-        /* ── Input Area ── */
         .input-area {
             background: white; border-top: 1px solid rgba(0,0,0,0.08);
             padding: 10px 14px;
@@ -146,9 +124,7 @@
         .submit-btn:disabled { background: #c0c0c8; }
 
         @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
-        @keyframes spin   { to { transform: rotate(360deg); } }
 
-        /* ── Mode Toggle ── */
         .mode-toggle { display: flex; gap: 6px; margin-bottom: 8px; }
         .mode-btn {
             flex: 1; padding: 7px 0; border-radius: 10px; border: none;
@@ -159,7 +135,6 @@
         .mode-btn.active-log  { background: #1c1c2e; color: white; }
         .mode-btn.active-plan { background: #0a84ff; color: white; }
 
-        /* ── Schedule datetime row ── */
         .schedule-row { display: none; margin-bottom: 8px; flex-direction: column; gap: 6px; }
         .schedule-row.show { display: flex; }
         .schedule-time-row { display: flex; align-items: center; gap: 8px; }
@@ -173,7 +148,6 @@
             outline: none; background: #f0f6ff; color: #1c1c2e;
         }
 
-        /* ── Location button ── */
         .loc-btn {
             width: 44px; height: 44px; border-radius: 50%; border: none;
             background: #f0f0f5; cursor: pointer;
@@ -183,7 +157,6 @@
         .loc-btn:active { transform: scale(0.90); }
         .loc-btn.loading { animation: pulse 1s infinite; }
 
-        /* ── Location Modal ── */
         .loc-modal-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 300;
             display: flex; align-items: flex-end;
@@ -207,7 +180,6 @@
         .loc-item-label { font-size: 11px; color: #999; font-weight: 700; margin-bottom: 3px; }
         .loc-item-name  { color: #1c1c2e; font-weight: 500; }
 
-        /* ── Edit Modal ── */
         .modal-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200;
             display: flex; align-items: flex-end;
@@ -243,7 +215,6 @@
         .btn-delete { flex:1; padding:14px; border:1.5px solid #ff3b30; background:white; color:#ff3b30; border-radius:13px; font-size:15px; font-weight:600; cursor:pointer; }
         .btn-save   { flex:2; padding:14px; border:none; background:#1c1c2e; color:white; border-radius:13px; font-size:15px; font-weight:700; cursor:pointer; }
 
-        /* ── Toast ── */
         .toast {
             position: fixed; bottom: 100px; left: 50%;
             transform: translateX(-50%) translateY(10px);
@@ -257,13 +228,11 @@
 </head>
 <body>
 
-<!-- ===== Client ID ===== -->
 <script>
     const CLIENT_ID = '168669644981-at642rkfpbj1v4mbjtj1rd4osqn9uea9.apps.googleusercontent.com';
 </script>
 
-<!-- App Screen -->
-<div id="appScreen" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+<div id="appScreen">
     <div class="header">
         <div style="display:flex;align-items:center;gap:10px;">
             <h1>QuickLog</h1>
@@ -274,7 +243,6 @@
         </div>
         <div class="header-right">
             <span class="entry-count" id="entryCount">0件</span>
-            <button class="signout-btn" id="signoutBtn">連携解除</button>
         </div>
     </div>
 
@@ -285,12 +253,10 @@
     </div>
 
     <div class="input-area">
-        <!-- モード切替 -->
         <div class="mode-toggle">
             <button class="mode-btn active-log" id="modeBtnLog">📝 今すぐ記録</button>
             <button class="mode-btn" id="modeBtnPlan">⏰ 予定を追加</button>
         </div>
-        <!-- 予定モード：日時選択 -->
         <div class="schedule-row" id="scheduleRow">
             <div class="schedule-time-row">
                 <span class="schedule-label">開始</span>
@@ -301,7 +267,6 @@
                 <input type="datetime-local" class="schedule-input" id="scheduleEndInput">
             </div>
         </div>
-        <!-- 入力行 -->
         <div class="input-row">
             <button class="loc-btn" id="locBtn" title="現在地を挿入">📍</button>
             <button class="mic-btn" id="micBtn" title="音声入力">🎤</button>
@@ -315,7 +280,6 @@
     </div>
 </div>
 
-<!-- Location Modal -->
 <div class="loc-modal-overlay" id="locModalOverlay">
     <div class="loc-modal">
         <div class="modal-drag-handle"></div>
@@ -327,7 +291,6 @@
     </div>
 </div>
 
-<!-- Edit Modal -->
 <div class="modal-overlay" id="modalOverlay">
     <div class="modal">
         <div class="modal-drag-handle"></div>
@@ -366,11 +329,10 @@ const APP_TAG   = 'quicklog';
 const TZ        = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 // ============================================================
-// IndexedDB（端末内ストレージ＝一次保存先）
+// IndexedDB
 // ============================================================
 const DB_NAME    = 'QuickLogDB';
-const DB_VERSION = 2;
-const STORE      = 'entries';
+const DB_VERSION = 1;
 let db;
 
 function openDB() {
@@ -378,8 +340,8 @@ function openDB() {
         const req = indexedDB.open(DB_NAME, DB_VERSION);
         req.onupgradeneeded = e => {
             const d = e.target.result;
-            if (!d.objectStoreNames.contains(STORE)) {
-                d.createObjectStore(STORE, { keyPath: 'id' })
+            if (!d.objectStoreNames.contains('entries')) {
+                d.createObjectStore('entries', { keyPath: 'id' })
                  .createIndex('timestamp', 'timestamp', { unique: false });
             }
         };
@@ -389,55 +351,52 @@ function openDB() {
 }
 
 function dbPut(entry) {
-    return new Promise(function(resolve, reject) {
-        var tx = db.transaction(STORE, 'readwrite');
-        tx.objectStore(STORE).put(entry);
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('entries', 'readwrite');
+        tx.objectStore('entries').put(entry);
         tx.oncomplete = resolve;
-        tx.onerror = function() { reject(tx.error); };
+        tx.onerror = reject;
     });
 }
 
 function dbDelete(id) {
-    return new Promise(function(resolve, reject) {
-        var tx = db.transaction(STORE, 'readwrite');
-        tx.objectStore(STORE).delete(id);
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('entries', 'readwrite');
+        tx.objectStore('entries').delete(id);
         tx.oncomplete = resolve;
-        tx.onerror = function() { reject(tx.error); };
+        tx.onerror = reject;
     });
 }
 
 function getAllEntries() {
-    return new Promise(function(resolve) {
-        var tx  = db.transaction(STORE, 'readonly');
-        var req = tx.objectStore(STORE).getAll();
-        req.onsuccess = function() {
-            // 旧フォーマット（quicklog.html由来）のエントリを正規化
-            var raw = req.result || [];
-            var entries = raw.map(function(e) {
-                return Object.assign(
-                    { gcalId: null, endTimestamp: null, colorId: null, syncStatus: 'pending' },
-                    e
-                );
-            });
+    return new Promise(resolve => {
+        const tx = db.transaction('entries', 'readonly');
+        const req = tx.objectStore('entries').index('timestamp').getAll();
+        req.onsuccess = () => {
+            let entries = req.result || [];
+            entries = entries.map(e => ({
+                id: e.id,
+                content: e.content,
+                timestamp: e.timestamp,
+                endTimestamp: e.endTimestamp || null,
+                colorId: e.colorId || null,
+                gcalId: e.gcalId || null,
+                syncStatus: e.syncStatus || 'pending'
+            }));
             resolve(entries);
         };
-        req.onerror = function() { resolve([]); };
+        req.onerror = () => resolve([]);
     });
-}
-
-function genId() {
-    return `${Date.now()}_${Math.random().toString(36).slice(2)}`;
 }
 
 // ============================================================
 // 状態
 // ============================================================
 let tokenClient;
-let accessToken       = null;
-let tokenExpiry       = 0;
+let accessToken = null;
+let tokenExpiry = 0;
 let tokenRefreshTimer = null;
-let currentEditEntry  = null;
-let pendingAction     = null; // 認証後に実行するアクション ('sync' | 'import')
+let currentEditEntry = null;
 
 // ============================================================
 // UI ユーティリティ
@@ -462,9 +421,9 @@ function fmtTime(ts) {
 }
 
 function fmtDateLabel(ts) {
-    const d   = new Date(ts);
+    const d = new Date(ts);
     const now = new Date();
-    const today    = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const entryDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
     const diff = Math.round((today - entryDay) / 86400000);
     if (diff === 0) return '今日';
@@ -474,17 +433,13 @@ function fmtDateLabel(ts) {
 }
 
 function toDatetimeLocal(ts) {
-    const d   = new Date(ts);
+    const d = new Date(ts);
     const pad = n => String(n).padStart(2,'0');
     return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function escHtml(s) {
     return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
-}
-
-function isTokenValid() {
-    return accessToken && Date.now() < tokenExpiry - 60000;
 }
 
 // ============================================================
@@ -503,7 +458,7 @@ async function updateSyncBadge() {
 }
 
 // ============================================================
-// Google Identity Services（同期専用）
+// Google Identity Services
 // ============================================================
 function initGIS() {
     if (typeof google === 'undefined') { setTimeout(initGIS, 200); return; }
@@ -516,23 +471,16 @@ function initGIS() {
             accessToken = resp.access_token;
             tokenExpiry = Date.now() + (resp.expires_in * 1000);
             scheduleTokenRefresh();
-            // 認証後に実行すべきアクションを処理
-            const action = pendingAction || 'sync';
-            pendingAction = null;
-            if (action === 'import') await doImport();
-            else {
-                await doSync();
-                window.open('https://calendar.google.com', '_blank');
-            }
+            await doSync();
+            window.open('https://calendar.google.com', '_blank');
         },
     });
 
-    // 前回のトークンが残っていれば復元
-    const savedToken  = localStorage.getItem('ql_token');
+    const savedToken = localStorage.getItem('ql_token');
     const savedExpiry = Number(localStorage.getItem('ql_expiry') || 0);
     if (savedToken && Date.now() < savedExpiry - 60000) {
-        accessToken  = savedToken;
-        tokenExpiry  = savedExpiry;
+        accessToken = savedToken;
+        tokenExpiry = savedExpiry;
         scheduleTokenRefresh();
     }
 }
@@ -545,7 +493,7 @@ function scheduleTokenRefresh() {
             if (tokenClient) tokenClient.requestAccessToken({ prompt: '' });
         }, msUntilRefresh);
     }
-    localStorage.setItem('ql_token',  accessToken);
+    localStorage.setItem('ql_token', accessToken);
     localStorage.setItem('ql_expiry', String(tokenExpiry));
 }
 
@@ -554,29 +502,29 @@ function scheduleTokenRefresh() {
 // ============================================================
 async function calFetch(path, options) {
     if (!options) options = {};
-    var headers = Object.assign(
+    const headers = Object.assign(
         { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
         options.headers || {}
     );
-    var fetchOpts = { method: options.method || 'GET', headers: headers };
+    const fetchOpts = { method: options.method || 'GET', headers: headers };
     if (options.body) fetchOpts.body = options.body;
     const res = await fetch('https://www.googleapis.com/calendar/v3' + path, fetchOpts);
     if (res.status === 401) { accessToken = null; tokenExpiry = 0; return null; }
     if (!res.ok) {
-        const err = await res.json().catch(function() { return {}; });
-        throw new Error((err && err.error && err.error.message) || ('HTTP ' + res.status));
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err.error && err.error.message) || ('HTTP ' + res.status));
     }
     if (res.status === 204) return null;
     return res.json();
 }
 
 async function gcalCreate(entry) {
-    const dt    = new Date(entry.timestamp).toISOString();
+    const dt = new Date(entry.timestamp).toISOString();
     const dtEnd = new Date(entry.endTimestamp || entry.timestamp + 60000).toISOString();
-    var body = {
+    const body = {
         summary: entry.content,
         start: { dateTime: dt, timeZone: TZ },
-        end:   { dateTime: dtEnd, timeZone: TZ },
+        end: { dateTime: dtEnd, timeZone: TZ },
         extendedProperties: { private: { source: APP_TAG } },
     };
     if (entry.colorId) body.colorId = entry.colorId;
@@ -587,12 +535,12 @@ async function gcalCreate(entry) {
 }
 
 async function gcalUpdate(entry) {
-    const dt    = new Date(entry.timestamp).toISOString();
+    const dt = new Date(entry.timestamp).toISOString();
     const dtEnd = new Date(entry.endTimestamp || entry.timestamp + 60000).toISOString();
-    var body = {
+    const body = {
         summary: entry.content,
         start: { dateTime: dt, timeZone: TZ },
-        end:   { dateTime: dtEnd, timeZone: TZ },
+        end: { dateTime: dtEnd, timeZone: TZ },
         extendedProperties: { private: { source: APP_TAG } },
     };
     if (entry.colorId) body.colorId = entry.colorId;
@@ -607,17 +555,20 @@ async function gcalDelete(gcalId) {
 }
 
 // ============================================================
-// 同期処理（📅ボタン → GCal一括反映）
+// 同期処理
 // ============================================================
 async function requestSync() {
     if (isTokenValid()) {
         await doSync();
         window.open('https://calendar.google.com', '_blank');
     } else {
-        // 認証→コールバック内で doSync() が呼ばれる
         if (!tokenClient) { showError('Google連携の準備中です。しばらく待ってから再試行してください。'); return; }
         tokenClient.requestAccessToken({ prompt: '' });
     }
+}
+
+function isTokenValid() {
+    return accessToken && Date.now() < tokenExpiry - 60000;
 }
 
 async function doSync() {
@@ -637,7 +588,6 @@ async function doSync() {
                 if (entry.gcalId) await gcalDelete(entry.gcalId);
                 await dbDelete(entry.id);
             } else {
-                // pending（新規 or 更新）
                 if (entry.gcalId) {
                     await gcalUpdate(entry);
                 } else {
@@ -660,84 +610,13 @@ async function doSync() {
     else            showToast(`${synced}件をGoogleカレンダーに同期しました ✓`);
 }
 
-document.getElementById('calSyncBtn').addEventListener('click', async () => {
-    await requestSync();
-});
+document.getElementById('calSyncBtn').addEventListener('click', requestSync);
 
 // ============================================================
-// GCal → IndexedDB インポート（既存データの取り込み）
-// ============================================================
-async function requestImport() {
-    if (isTokenValid()) {
-        await doImport();
-    } else {
-        // 認証後にインポートを実行するよう一時フラグ
-        pendingAction = 'import';
-        if (!tokenClient) { showError('Google連携の準備中です。しばらく待ってから再試行してください。'); pendingAction = null; return; }
-        tokenClient.requestAccessToken({ prompt: '' });
-    }
-}
-
-async function doImport() {
-    const btn = document.getElementById('importBtn');
-    if (btn) { btn.textContent = '⏳ 読み込み中…'; btn.disabled = true; }
-
-    try {
-        const LOAD_DAYS = 90;
-        const timeMin = new Date(Date.now() - LOAD_DAYS * 86400000).toISOString();
-        const timeMax = new Date(Date.now() + 60 * 86400000).toISOString();
-
-        const params = new URLSearchParams({
-            timeMin, timeMax,
-            orderBy: 'startTime',
-            singleEvents: 'true',
-            privateExtendedProperty: `source=${APP_TAG}`,
-            maxResults: '500',
-        });
-
-        const data = await calFetch(`/calendars/${encodeURIComponent(CAL_ID)}/events?${params}`);
-        if (!data) { showError('インポートに失敗しました（認証エラー）'); return; }
-
-        const events = data.items || [];
-        if (events.length === 0) { showToast('インポートできるデータがありませんでした'); return; }
-
-        // 既存IndexedDBエントリのgcalIdセットを取得（重複防止）
-        const existing = await getAllEntries();
-        const existingGcalIds = new Set(existing.map(e => e.gcalId).filter(Boolean));
-
-        let imported = 0;
-        for (const ev of events) {
-            if (existingGcalIds.has(ev.id)) continue; // 重複スキップ
-            const ts    = new Date(ev.start.dateTime || ev.start.date).getTime();
-            const endTs = (ev.end && ev.end.dateTime) ? new Date(ev.end.dateTime).getTime() : null;
-            await dbPut({
-                id:          genId(),
-                gcalId:      ev.id,
-                content:     ev.summary || '',
-                timestamp:   ts,
-                endTimestamp: endTs,
-                colorId:     ev.colorId || null,
-                syncStatus:  'synced',
-            });
-            imported++;
-        }
-
-        await renderList();
-        await updateSyncBadge();
-        showToast(`${imported}件のデータを読み込みました ✓`);
-
-    } catch (e) {
-        showError('インポートエラー: ' + e.message);
-        if (btn) { btn.textContent = '📅 Googleカレンダーから読み込む'; btn.disabled = false; }
-    }
-}
-
-// ============================================================
-// Render（IndexedDB から直接表示）
+// Render
 // ============================================================
 async function renderList() {
     const entries = await getAllEntries();
-    // delete_pending（削除待ち）は一覧から除外
     const visible = entries.filter(e => e.syncStatus !== 'delete_pending');
 
     const container = document.getElementById('listContainer');
@@ -748,28 +627,26 @@ async function renderList() {
             <div class="empty-state">
                 まだ記録がありません<br>
                 <span style="font-size:32px;display:block;margin-top:10px;">📋</span>
-                <button class="import-btn" id="importBtn">📅 Googleカレンダーから読み込む</button>
             </div>`;
-        document.getElementById('importBtn').addEventListener('click', requestImport);
         return;
     }
 
-    const now    = Date.now();
+    const now = Date.now();
     const future = visible.filter(e => e.timestamp > now).sort((a,b) => a.timestamp - b.timestamp);
-    const past   = visible.filter(e => e.timestamp <= now).sort((a,b) => b.timestamp - a.timestamp);
+    const past = visible.filter(e => e.timestamp <= now).sort((a,b) => b.timestamp - a.timestamp);
     const sorted = [...future, ...past];
 
     container.innerHTML = '';
     let lastLabel = null;
 
     sorted.forEach(entry => {
-        const isFuture  = entry.timestamp > now;
+        const isFuture = entry.timestamp > now;
         const isPending = entry.syncStatus === 'pending';
-        const label     = isFuture ? '⏰ 予定' : fmtDateLabel(entry.timestamp);
+        const label = isFuture ? '⏰ 予定' : fmtDateLabel(entry.timestamp);
 
         if (label !== lastLabel) {
             const hdr = document.createElement('div');
-            hdr.className   = 'date-group-header';
+            hdr.className = 'date-group-header';
             hdr.textContent = label;
             container.appendChild(hdr);
             lastLabel = label;
@@ -779,7 +656,7 @@ async function renderList() {
         card.className = 'entry-card' + (isFuture ? ' future' : '');
         card.innerHTML = `
             <div class="entry-time">${isFuture ? fmtDateLabel(entry.timestamp).replace('⏰ ','') + '<br>' : ''}${fmtTime(entry.timestamp)}</div>
-            <div class="entry-content">${escHtml(entry.content)}${isPending ? '<span class="pending-dot">●</span>' : ''}</div>
+            <div class="entry-content">${escHtml(entry.content)}${isPending ? '<span style="font-size:8px;color:#c0c0cc;vertical-align:middle;margin-left:4px;">●</span>' : ''}</div>
             <button class="entry-edit-btn" aria-label="編集">✏️</button>
         `;
 
@@ -791,7 +668,7 @@ async function renderList() {
 }
 
 // ============================================================
-// Submit（IndexedDB に即保存）
+// Submit
 // ============================================================
 const textInput = document.getElementById('textInput');
 const submitBtn = document.getElementById('submitBtn');
@@ -813,12 +690,12 @@ async function submitEntry() {
     if (!content) return;
 
     const isPlan = document.getElementById('modeBtnPlan').classList.contains('active-plan');
-    var timestamp    = Date.now();
-    var endTimestamp = null;
-    var colorId      = null;
+    let timestamp = Date.now();
+    let endTimestamp = null;
+    let colorId = null;
 
     if (isPlan) {
-        const dtVal    = document.getElementById('scheduleInput').value;
+        const dtVal = document.getElementById('scheduleInput').value;
         const dtEndVal = document.getElementById('scheduleEndInput').value;
         if (!dtVal) { showError('予定の開始日時を選択してください'); return; }
         timestamp = new Date(dtVal).getTime();
@@ -829,20 +706,19 @@ async function submitEntry() {
                 showError('終了日時は開始日時より後にしてください'); return;
             }
         }
-        colorId = '3'; // オレンジ（予定）
+        colorId = '3';
     }
 
-    // バリデーション通過後に無効化（早期returnの場合はボタンが残る）
     submitBtn.disabled = true;
 
     const entry = {
-        id:          genId(),
-        gcalId:      null,
+        id: `${timestamp}_${Math.random().toString(36).slice(2)}`,
+        gcalId: null,
         content,
         timestamp,
         endTimestamp,
         colorId,
-        syncStatus:  'pending',
+        syncStatus: 'pending',
     };
 
     await dbPut(entry);
@@ -865,8 +741,8 @@ let recognition = null, isRecording = false;
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 if (SR) {
     recognition = new SR();
-    recognition.lang           = 'ja-JP';
-    recognition.continuous     = false;
+    recognition.lang = 'ja-JP';
+    recognition.continuous = false;
     recognition.interimResults = true;
 
     recognition.onresult = e => {
@@ -877,9 +753,8 @@ if (SR) {
         submitBtn.disabled = !txt.trim();
     };
 
-    const stopRec = () => { isRecording = false; micBtn.classList.remove('recording'); micBtn.textContent = '🎤'; };
-    recognition.onend   = stopRec;
-    recognition.onerror = stopRec;
+    recognition.onend = () => { isRecording = false; micBtn.classList.remove('recording'); micBtn.textContent = '🎤'; };
+    recognition.onerror = recognition.onend;
 
     micBtn.addEventListener('click', () => {
         if (isRecording) { recognition.stop(); }
@@ -891,11 +766,11 @@ if (SR) {
 }
 
 // ============================================================
-// Mode Toggle（記録 / 予定）
+// Mode Toggle
 // ============================================================
-const modeBtnLog    = document.getElementById('modeBtnLog');
-const modeBtnPlan   = document.getElementById('modeBtnPlan');
-const scheduleRow   = document.getElementById('scheduleRow');
+const modeBtnLog = document.getElementById('modeBtnLog');
+const modeBtnPlan = document.getElementById('modeBtnPlan');
+const scheduleRow = document.getElementById('scheduleRow');
 const scheduleInput = document.getElementById('scheduleInput');
 
 function syncEndTime() {
@@ -903,7 +778,7 @@ function syncEndTime() {
     if (!startVal) return;
     const endInput = document.getElementById('scheduleEndInput');
     if (!endInput.value || new Date(endInput.value) <= new Date(startVal)) {
-        const d   = new Date(new Date(startVal).getTime() + 60 * 60 * 1000);
+        const d = new Date(new Date(startVal).getTime() + 60 * 60 * 1000);
         const pad = n => String(n).padStart(2,'0');
         endInput.value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
     }
@@ -922,7 +797,7 @@ function setMode(mode) {
         modeBtnLog.classList.remove('active-log');
         scheduleRow.classList.add('show');
         if (!scheduleInput.value) {
-            const d   = new Date(Date.now() + 86400000);
+            const d = new Date(Date.now() + 86400000);
             const pad = n => String(n).padStart(2,'0');
             scheduleInput.value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
         }
@@ -931,13 +806,13 @@ function setMode(mode) {
     }
 }
 
-modeBtnLog.addEventListener('click',  () => setMode('log'));
+modeBtnLog.addEventListener('click', () => setMode('log'));
 modeBtnPlan.addEventListener('click', () => setMode('plan'));
 
 // ============================================================
-// Location（現在地挿入）
+// Location
 // ============================================================
-const locBtn          = document.getElementById('locBtn');
+const locBtn = document.getElementById('locBtn');
 const locModalOverlay = document.getElementById('locModalOverlay');
 
 function closeLocModal() { locModalOverlay.classList.remove('active'); }
@@ -956,7 +831,7 @@ locBtn.addEventListener('click', async () => {
         );
         const { latitude: lat, longitude: lng } = pos.coords;
 
-        const res  = await fetch(
+        const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=ja&zoom=18`,
             { headers: { 'User-Agent': 'QuickLog/1.0' } }
         );
@@ -965,14 +840,14 @@ locBtn.addEventListener('click', async () => {
 
         const candidates = [];
         const place = addr.amenity || addr.shop || addr.office || addr.tourism || addr.leisure || addr.building;
-        const road  = addr.road || addr.pedestrian || addr.footway;
-        const area  = addr.suburb || addr.neighbourhood || addr.quarter || addr.city_district;
-        const city  = addr.city || addr.town || addr.village || addr.county;
+        const road = addr.road || addr.pedestrian || addr.footway;
+        const area = addr.suburb || addr.neighbourhood || addr.quarter || addr.city_district;
+        const city = addr.city || addr.town || addr.village || addr.county;
 
-        if (place)             candidates.push({ label: '施設名',    name: place });
-        if (place && road)     candidates.push({ label: '施設＋通り', name: `${place}（${road}）` });
-        if (road && city)      candidates.push({ label: 'エリア',     name: `${road}、${area || city}` });
-        if (city)              candidates.push({ label: '市区町村',   name: area ? `${area}、${city}` : city });
+        if (place) candidates.push({ label: '施設名', name: place });
+        if (place && road) candidates.push({ label: '施設＋通り', name: `${place}（${road}）` });
+        if (road && city) candidates.push({ label: 'エリア', name: `${road}、${area || city}` });
+        if (city) candidates.push({ label: '市区町村', name: area ? `${area}、${city}` : city });
         if (candidates.length === 0)
             candidates.push({ label: '取得した住所', name: (data.display_name ? data.display_name.split(',')[0] : '') || '不明' });
 
@@ -1008,13 +883,13 @@ locBtn.addEventListener('click', async () => {
 });
 
 // ============================================================
-// Edit Modal（IndexedDB エントリを編集）
+// Edit Modal
 // ============================================================
 const modalOverlay = document.getElementById('modalOverlay');
 
 function openEditModal(entry) {
     currentEditEntry = entry;
-    document.getElementById('editContent').value  = entry.content;
+    document.getElementById('editContent').value = entry.content;
     document.getElementById('editDatetime').value = toDatetimeLocal(entry.timestamp);
     const endTs = entry.endTimestamp || entry.timestamp + 60 * 60 * 1000;
     document.getElementById('editEndDatetime').value = toDatetimeLocal(endTs);
@@ -1028,8 +903,8 @@ document.getElementById('modalClose').addEventListener('click', closeModal);
 modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeModal(); });
 
 document.getElementById('saveBtn').addEventListener('click', async () => {
-    const content  = document.getElementById('editContent').value.trim();
-    const dtVal    = document.getElementById('editDatetime').value;
+    const content = document.getElementById('editContent').value.trim();
+    const dtVal = document.getElementById('editDatetime').value;
     const dtEndVal = document.getElementById('editEndDatetime').value;
     if (!content || !dtVal) return;
     const startTs = new Date(dtVal).getTime();
@@ -1050,10 +925,8 @@ document.getElementById('deleteBtn').addEventListener('click', async () => {
     if (!confirm('この記録を削除しますか？')) return;
     const entry = currentEditEntry;
     if (entry.gcalId) {
-        // Google Calendarに同期済み → 次回同期時に削除
         await dbPut(Object.assign({}, entry, { syncStatus: 'delete_pending' }));
     } else {
-        // ローカルのみ → 即削除
         await dbDelete(entry.id);
     }
     closeModal();
@@ -1063,23 +936,7 @@ document.getElementById('deleteBtn').addEventListener('click', async () => {
 });
 
 // ============================================================
-// 連携解除ボタン
-// ============================================================
-document.getElementById('signoutBtn').addEventListener('click', () => {
-    if (!confirm('Google連携を解除しますか？\n（ローカルの記録はそのまま残ります）')) return;
-    if (accessToken && typeof google !== 'undefined') {
-        google.accounts.oauth2.revoke(accessToken, () => {});
-    }
-    accessToken = null;
-    tokenExpiry = 0;
-    localStorage.removeItem('ql_token');
-    localStorage.removeItem('ql_expiry');
-    if (tokenRefreshTimer) { clearTimeout(tokenRefreshTimer); tokenRefreshTimer = null; }
-    showToast('Google連携を解除しました');
-});
-
-// ============================================================
-// Init（認証不要で即起動）
+// Init
 // ============================================================
 async function appInit() {
     try {
@@ -1095,19 +952,14 @@ async function appInit() {
 window.addEventListener('load', async function() {
     await appInit();
     setTimeout(function() { textInput.focus(); }, 150);
-
-    // マイク権限キャッシュ（起動音の原因になるSR.start()は使わない）
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         navigator.mediaDevices.getUserMedia({ audio: true })
             .then(function(stream) { stream.getTracks().forEach(function(t) { t.stop(); }); })
             .catch(function() {});
     }
-
-    initGIS(); // バックグラウンドでGIS初期化（同期ボタン押下に備える）
+    initGIS();
 });
 
-// bfcache（ブラウザの戻る/前進キャッシュ）からの復帰時に再描画
-// → カレンダーアプリ等から戻ったときにブランク画面になる問題を解消
 window.addEventListener('pageshow', async function(event) {
     if (event.persisted) {
         await appInit();
