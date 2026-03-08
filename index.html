@@ -549,18 +549,18 @@ function scheduleTokenRefresh() {
 // ============================================================
 // Google Calendar API
 // ============================================================
-async function calFetch(path, options = {}) {
-    const res = await fetch(`https://www.googleapis.com/calendar/v3${path}`, {
-        ...options,
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-            ...(options.headers || {}),
-        },
-    });
+async function calFetch(path, options) {
+    if (!options) options = {};
+    var headers = Object.assign(
+        { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+        options.headers || {}
+    );
+    var fetchOpts = { method: options.method || 'GET', headers: headers };
+    if (options.body) fetchOpts.body = options.body;
+    const res = await fetch('https://www.googleapis.com/calendar/v3' + path, fetchOpts);
     if (res.status === 401) { accessToken = null; tokenExpiry = 0; return null; }
     if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
+        const err = await res.json().catch(function() { return {}; });
         throw new Error((err && err.error && err.error.message) || ('HTTP ' + res.status));
     }
     if (res.status === 204) return null;
@@ -570,30 +570,32 @@ async function calFetch(path, options = {}) {
 async function gcalCreate(entry) {
     const dt    = new Date(entry.timestamp).toISOString();
     const dtEnd = new Date(entry.endTimestamp || entry.timestamp + 60000).toISOString();
-    return calFetch(`/calendars/${encodeURIComponent(CAL_ID)}/events`, {
+    var body = {
+        summary: entry.content,
+        start: { dateTime: dt, timeZone: TZ },
+        end:   { dateTime: dtEnd, timeZone: TZ },
+        extendedProperties: { private: { source: APP_TAG } },
+    };
+    if (entry.colorId) body.colorId = entry.colorId;
+    return calFetch('/calendars/' + encodeURIComponent(CAL_ID) + '/events', {
         method: 'POST',
-        body: JSON.stringify({
-            summary: entry.content,
-            start: { dateTime: dt, timeZone: TZ },
-            end:   { dateTime: dtEnd, timeZone: TZ },
-            extendedProperties: { private: { source: APP_TAG } },
-            ...(entry.colorId ? { colorId: entry.colorId } : {}),
-        }),
+        body: JSON.stringify(body),
     });
 }
 
 async function gcalUpdate(entry) {
     const dt    = new Date(entry.timestamp).toISOString();
     const dtEnd = new Date(entry.endTimestamp || entry.timestamp + 60000).toISOString();
-    return calFetch(`/calendars/${encodeURIComponent(CAL_ID)}/events/${entry.gcalId}`, {
+    var body = {
+        summary: entry.content,
+        start: { dateTime: dt, timeZone: TZ },
+        end:   { dateTime: dtEnd, timeZone: TZ },
+        extendedProperties: { private: { source: APP_TAG } },
+    };
+    if (entry.colorId) body.colorId = entry.colorId;
+    return calFetch('/calendars/' + encodeURIComponent(CAL_ID) + '/events/' + entry.gcalId, {
         method: 'PUT',
-        body: JSON.stringify({
-            summary: entry.content,
-            start: { dateTime: dt, timeZone: TZ },
-            end:   { dateTime: dtEnd, timeZone: TZ },
-            extendedProperties: { private: { source: APP_TAG } },
-            ...(entry.colorId ? { colorId: entry.colorId } : {}),
-        }),
+        body: JSON.stringify(body),
     });
 }
 
@@ -1034,7 +1036,7 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
         endTs = new Date(dtEndVal).getTime();
         if (isNaN(endTs) || endTs <= startTs) { showError('終了日時は開始日時より後にしてください'); return; }
     }
-    const updated = { ...currentEditEntry, content, timestamp: startTs, endTimestamp: endTs, syncStatus: 'pending' };
+    const updated = Object.assign({}, currentEditEntry, { content: content, timestamp: startTs, endTimestamp: endTs, syncStatus: 'pending' });
     await dbPut(updated);
     closeModal();
     await renderList();
@@ -1047,7 +1049,7 @@ document.getElementById('deleteBtn').addEventListener('click', async () => {
     const entry = currentEditEntry;
     if (entry.gcalId) {
         // Google Calendarに同期済み → 次回同期時に削除
-        await dbPut({ ...entry, syncStatus: 'delete_pending' });
+        await dbPut(Object.assign({}, entry, { syncStatus: 'delete_pending' }));
     } else {
         // ローカルのみ → 即削除
         await dbDelete(entry.id);
