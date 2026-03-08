@@ -208,9 +208,16 @@
 
         /* ── Schedule datetime row ── */
         .schedule-row {
-            display: none; margin-bottom: 8px;
+            display: none; margin-bottom: 8px; flex-direction: column; gap: 6px;
         }
         .schedule-row.show { display: flex; }
+        .schedule-time-row {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .schedule-label {
+            font-size: 11px; font-weight: 700; color: #0a84ff;
+            min-width: 28px; text-align: right; flex-shrink: 0; letter-spacing: 0.4px;
+        }
         .schedule-input {
             flex: 1; border: 1.5px solid #0a84ff; border-radius: 12px;
             padding: 9px 14px; font-size: 14px; font-family: inherit;
@@ -311,7 +318,14 @@
         </div>
         <!-- 予定モード：日時選択 -->
         <div class="schedule-row" id="scheduleRow">
-            <input type="datetime-local" class="schedule-input" id="scheduleInput">
+            <div class="schedule-time-row">
+                <span class="schedule-label">開始</span>
+                <input type="datetime-local" class="schedule-input" id="scheduleInput">
+            </div>
+            <div class="schedule-time-row">
+                <span class="schedule-label">終了</span>
+                <input type="datetime-local" class="schedule-input" id="scheduleEndInput">
+            </div>
         </div>
         <!-- 入力行 -->
         <div class="input-row">
@@ -352,8 +366,12 @@
             <textarea class="modal-input" id="editContent" rows="3"></textarea>
         </div>
         <div class="modal-field">
-            <label class="modal-label">日時</label>
+            <label class="modal-label">開始日時</label>
             <input type="datetime-local" class="modal-input" id="editDatetime">
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">終了日時</label>
+            <input type="datetime-local" class="modal-input" id="editEndDatetime">
         </div>
         <div class="modal-actions">
             <button class="btn-delete" id="deleteBtn">削除</button>
@@ -598,9 +616,9 @@ async function loadEntries() {
     }
 }
 
-async function createEvent(content, timestamp, colorId = null) {
+async function createEvent(content, timestamp, colorId = null, endTimestamp = null) {
     const dt    = new Date(timestamp).toISOString();
-    const dtEnd = new Date(timestamp + 60000).toISOString();
+    const dtEnd = new Date(endTimestamp || timestamp + 60000).toISOString();
 
     return calFetch(`/calendars/${encodeURIComponent(CAL_ID)}/events`, {
         method: 'POST',
@@ -614,9 +632,9 @@ async function createEvent(content, timestamp, colorId = null) {
     });
 }
 
-async function updateEvent(eventId, content, timestamp) {
+async function updateEvent(eventId, content, timestamp, endTimestamp = null) {
     const dt    = new Date(timestamp).toISOString();
-    const dtEnd = new Date(timestamp + 60000).toISOString();
+    const dtEnd = new Date(endTimestamp || timestamp + 60000).toISOString();
 
     return calFetch(`/calendars/${encodeURIComponent(CAL_ID)}/events/${eventId}`, {
         method: 'PUT',
@@ -711,11 +729,19 @@ async function submitEntry() {
     const isPlan = document.getElementById('modeBtnPlan').classList.contains('active-plan');
 
     let timestamp = Date.now();
+    let endTimestamp = null;
     if (isPlan) {
-        const dtVal = document.getElementById('scheduleInput').value;
-        if (!dtVal) { showError('予定の日時を選択してください'); return; }
+        const dtVal    = document.getElementById('scheduleInput').value;
+        const dtEndVal = document.getElementById('scheduleEndInput').value;
+        if (!dtVal) { showError('予定の開始日時を選択してください'); return; }
         timestamp = new Date(dtVal).getTime();
-        if (isNaN(timestamp)) { showError('日時が正しくありません'); return; }
+        if (isNaN(timestamp)) { showError('開始日時が正しくありません'); return; }
+        if (dtEndVal) {
+            endTimestamp = new Date(dtEndVal).getTime();
+            if (isNaN(endTimestamp) || endTimestamp <= timestamp) {
+                showError('終了日時は開始日時より後にしてください'); return;
+            }
+        }
     }
 
     submitBtn.disabled = true;
@@ -723,7 +749,7 @@ async function submitEntry() {
 
     try {
         // 予定はcolorId "3"（タンジェリン＝オレンジ）、記録はデフォルト
-        await createEvent(content, timestamp, isPlan ? '3' : null);
+        await createEvent(content, timestamp, isPlan ? '3' : null, endTimestamp);
         textInput.value = '';
         textInput.style.height = 'auto';
         if (isPlan) setMode('log'); // 予定送信後は記録モードに戻す
@@ -776,10 +802,24 @@ if (SR) {
 // ============================================================
 // Mode Toggle（記録 / 予定）
 // ============================================================
-const modeBtnLog  = document.getElementById('modeBtnLog');
-const modeBtnPlan = document.getElementById('modeBtnPlan');
-const scheduleRow = document.getElementById('scheduleRow');
+const modeBtnLog    = document.getElementById('modeBtnLog');
+const modeBtnPlan   = document.getElementById('modeBtnPlan');
+const scheduleRow   = document.getElementById('scheduleRow');
 const scheduleInput = document.getElementById('scheduleInput');
+
+// 開始時刻から終了時刻（+1時間）を自動セット
+function syncEndTime() {
+    const startVal = scheduleInput.value;
+    if (!startVal) return;
+    const endInput = document.getElementById('scheduleEndInput');
+    // 終了が未入力 or 開始以前の場合のみ上書き
+    if (!endInput.value || new Date(endInput.value) <= new Date(startVal)) {
+        const d   = new Date(new Date(startVal).getTime() + 60 * 60 * 1000);
+        const pad = n => String(n).padStart(2,'0');
+        endInput.value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+}
+scheduleInput.addEventListener('change', syncEndTime);
 
 function setMode(mode) {
     if (mode === 'log') {
@@ -794,10 +834,11 @@ function setMode(mode) {
         scheduleRow.classList.add('show');
         // デフォルト：明日の現在時刻
         if (!scheduleInput.value) {
-            const d = new Date(Date.now() + 86400000);
+            const d   = new Date(Date.now() + 86400000);
             const pad = n => String(n).padStart(2,'0');
             scheduleInput.value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
         }
+        syncEndTime(); // 終了時刻を開始+1時間で自動セット
         document.getElementById('textInput').placeholder = '予定の内容を入力';
     }
 }
@@ -893,6 +934,11 @@ function openEditModal(ev, ts) {
     currentEditId = ev.id;
     document.getElementById('editContent').value  = ev.summary || '';
     document.getElementById('editDatetime').value = toDatetimeLocal(ts);
+    // 終了時刻をセット（カレンダーに記録済みの値 or フォールバックで+1時間）
+    const endTs = ev.end?.dateTime
+        ? new Date(ev.end.dateTime).getTime()
+        : ts + 60 * 60 * 1000;
+    document.getElementById('editEndDatetime').value = toDatetimeLocal(endTs);
     modalOverlay.classList.add('active');
     setTimeout(() => document.getElementById('editContent').focus(), 300);
 }
@@ -903,11 +949,20 @@ document.getElementById('modalClose').addEventListener('click', closeModal);
 modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeModal(); });
 
 document.getElementById('saveBtn').addEventListener('click', async () => {
-    const content = document.getElementById('editContent').value.trim();
-    const dtVal   = document.getElementById('editDatetime').value;
+    const content  = document.getElementById('editContent').value.trim();
+    const dtVal    = document.getElementById('editDatetime').value;
+    const dtEndVal = document.getElementById('editEndDatetime').value;
     if (!content || !dtVal) return;
+    const startTs = new Date(dtVal).getTime();
+    let endTs = null;
+    if (dtEndVal) {
+        endTs = new Date(dtEndVal).getTime();
+        if (isNaN(endTs) || endTs <= startTs) {
+            showError('終了日時は開始日時より後にしてください'); return;
+        }
+    }
     try {
-        await updateEvent(currentEditId, content, new Date(dtVal).getTime());
+        await updateEvent(currentEditId, content, startTs, endTs);
         closeModal();
         await loadEntries();
         showToast('更新しました ✓');
