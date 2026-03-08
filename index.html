@@ -78,6 +78,15 @@
             text-align: center; color: #aaa; margin-top: 80px;
             font-size: 15px; line-height: 2;
         }
+        .import-btn {
+            display: inline-block; margin-top: 20px;
+            background: #1c1c2e; color: white;
+            border: none; border-radius: 14px;
+            padding: 13px 24px; font-size: 14px; font-weight: 700;
+            cursor: pointer; font-family: inherit;
+            transition: opacity 0.15s;
+        }
+        .import-btn:active { opacity: 0.7; }
         .date-group-header {
             font-size: 11px; color: #999; font-weight: 700;
             padding: 14px 4px 6px; letter-spacing: 0.8px;
@@ -398,7 +407,17 @@ function dbDelete(id) {
 function getAllEntries() {
     return new Promise(resolve => {
         const req = db.transaction(STORE, 'readonly').objectStore(STORE).getAll();
-        req.onsuccess = () => resolve(req.result || []);
+        req.onsuccess = () => {
+            // 旧フォーマット（quicklog.html由来）のエントリを正規化
+            const entries = (req.result || []).map(e => ({
+                gcalId:      null,
+                endTimestamp: null,
+                colorId:     null,
+                syncStatus:  'pending', // デフォルト：未同期扱い
+                ...e,                   // 既存フィールドで上書き
+            }));
+            resolve(entries);
+        };
     });
 }
 
@@ -410,10 +429,11 @@ function genId() {
 // 状態
 // ============================================================
 let tokenClient;
-let accessToken      = null;
-let tokenExpiry      = 0;
+let accessToken       = null;
+let tokenExpiry       = 0;
 let tokenRefreshTimer = null;
-let currentEditEntry = null;
+let currentEditEntry  = null;
+let pendingAction     = null; // 認証後に実行するアクション ('sync' | 'import')
 
 // ============================================================
 // UI ユーティリティ
@@ -492,7 +512,11 @@ function initGIS() {
             accessToken = resp.access_token;
             tokenExpiry = Date.now() + (resp.expires_in * 1000);
             scheduleTokenRefresh();
-            await doSync();
+            // 認証後に実行すべきアクションを処理
+            const action = pendingAction || 'sync';
+            pendingAction = null;
+            if (action === 'import') await doImport();
+            else                     await doSync();
         },
     });
 
@@ -625,7 +649,78 @@ async function doSync() {
     else            showToast(`${synced}件をGoogleカレンダーに同期しました ✓`);
 }
 
-document.getElementById('calSyncBtn').addEventListener('click', requestSync);
+document.getElementById('calSyncBtn').addEventListener('click', async () => {
+    // ユーザー操作の直後に開く（ポップアップブロック回避）
+    window.open('https://calendar.google.com', '_blank');
+    await requestSync();
+});
+
+// ============================================================
+// GCal → IndexedDB インポート（既存データの取り込み）
+// ============================================================
+async function requestImport() {
+    if (isTokenValid()) {
+        await doImport();
+    } else {
+        // 認証後にインポートを実行するよう一時フラグ
+        pendingAction = 'import';
+        tokenClient.requestAccessToken({ prompt: '' });
+    }
+}
+
+async function doImport() {
+    const btn = document.getElementById('importBtn');
+    if (btn) { btn.textContent = '⏳ 読み込み中…'; btn.disabled = true; }
+
+    try {
+        const LOAD_DAYS = 90;
+        const timeMin = new Date(Date.now() - LOAD_DAYS * 86400000).toISOString();
+        const timeMax = new Date(Date.now() + 60 * 86400000).toISOString();
+
+        const params = new URLSearchParams({
+            timeMin, timeMax,
+            orderBy: 'startTime',
+            singleEvents: 'true',
+            privateExtendedProperty: `source=${APP_TAG}`,
+            maxResults: '500',
+        });
+
+        const data = await calFetch(`/calendars/${encodeURIComponent(CAL_ID)}/events?${params}`);
+        if (!data) { showError('インポートに失敗しました（認証エラー）'); return; }
+
+        const events = data.items || [];
+        if (events.length === 0) { showToast('インポートできるデータがありませんでした'); return; }
+
+        // 既存IndexedDBエントリのgcalIdセットを取得（重複防止）
+        const existing = await getAllEntries();
+        const existingGcalIds = new Set(existing.map(e => e.gcalId).filter(Boolean));
+
+        let imported = 0;
+        for (const ev of events) {
+            if (existingGcalIds.has(ev.id)) continue; // 重複スキップ
+            const ts    = new Date(ev.start.dateTime || ev.start.date).getTime();
+            const endTs = ev.end?.dateTime ? new Date(ev.end.dateTime).getTime() : null;
+            await dbPut({
+                id:          genId(),
+                gcalId:      ev.id,
+                content:     ev.summary || '',
+                timestamp:   ts,
+                endTimestamp: endTs,
+                colorId:     ev.colorId || null,
+                syncStatus:  'synced',
+            });
+            imported++;
+        }
+
+        await renderList();
+        await updateSyncBadge();
+        showToast(`${imported}件のデータを読み込みました ✓`);
+
+    } catch (e) {
+        showError('インポートエラー: ' + e.message);
+        if (btn) { btn.textContent = '📅 Googleカレンダーから読み込む'; btn.disabled = false; }
+    }
+}
 
 // ============================================================
 // Render（IndexedDB から直接表示）
@@ -639,7 +734,13 @@ async function renderList() {
     document.getElementById('entryCount').textContent = `${visible.length}件`;
 
     if (visible.length === 0) {
-        container.innerHTML = '<div class="empty-state">まだ記録がありません<br><span style="font-size:32px;display:block;margin-top:10px;">📋</span></div>';
+        container.innerHTML = `
+            <div class="empty-state">
+                まだ記録がありません<br>
+                <span style="font-size:32px;display:block;margin-top:10px;">📋</span>
+                <button class="import-btn" id="importBtn">📅 Googleカレンダーから読み込む</button>
+            </div>`;
+        document.getElementById('importBtn').addEventListener('click', requestImport);
         return;
     }
 
