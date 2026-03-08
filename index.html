@@ -369,7 +369,7 @@ const TZ        = Intl.DateTimeFormat().resolvedOptions().timeZone;
 // IndexedDB（端末内ストレージ＝一次保存先）
 // ============================================================
 const DB_NAME    = 'QuickLogDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE      = 'entries';
 let db;
 
@@ -520,7 +520,10 @@ function initGIS() {
             const action = pendingAction || 'sync';
             pendingAction = null;
             if (action === 'import') await doImport();
-            else                     await doSync();
+            else {
+                await doSync();
+                window.open('https://calendar.google.com', '_blank');
+            }
         },
     });
 
@@ -609,6 +612,7 @@ async function gcalDelete(gcalId) {
 async function requestSync() {
     if (isTokenValid()) {
         await doSync();
+        window.open('https://calendar.google.com', '_blank');
     } else {
         // 認証→コールバック内で doSync() が呼ばれる
         if (!tokenClient) { showError('Google連携の準備中です。しばらく待ってから再試行してください。'); return; }
@@ -657,8 +661,6 @@ async function doSync() {
 }
 
 document.getElementById('calSyncBtn').addEventListener('click', async () => {
-    // ユーザー操作の直後に開く（ポップアップブロック回避）
-    window.open('https://calendar.google.com', '_blank');
     await requestSync();
 });
 
