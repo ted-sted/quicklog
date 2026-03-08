@@ -535,7 +535,7 @@ function scheduleTokenRefresh() {
     const msUntilRefresh = tokenExpiry - Date.now() - 5 * 60 * 1000;
     if (msUntilRefresh > 0) {
         tokenRefreshTimer = setTimeout(() => {
-            tokenClient.requestAccessToken({ prompt: '' });
+            if (tokenClient) tokenClient.requestAccessToken({ prompt: '' });
         }, msUntilRefresh);
     }
     localStorage.setItem('ql_token',  accessToken);
@@ -605,6 +605,7 @@ async function requestSync() {
         await doSync();
     } else {
         // 認証→コールバック内で doSync() が呼ばれる
+        if (!tokenClient) { showError('Google連携の準備中です。しばらく待ってから再試行してください。'); return; }
         tokenClient.requestAccessToken({ prompt: '' });
     }
 }
@@ -637,7 +638,7 @@ async function doSync() {
                 await dbPut(entry);
             }
             synced++;
-        } catch {
+        } catch(err) {
             failed++;
         }
     }
@@ -664,6 +665,7 @@ async function requestImport() {
     } else {
         // 認証後にインポートを実行するよう一時フラグ
         pendingAction = 'import';
+        if (!tokenClient) { showError('Google連携の準備中です。しばらく待ってから再試行してください。'); pendingAction = null; return; }
         tokenClient.requestAccessToken({ prompt: '' });
     }
 }
@@ -801,6 +803,7 @@ submitBtn.addEventListener('click', submitEntry);
 async function submitEntry() {
     const content = textInput.value.trim();
     if (!content) return;
+    submitBtn.disabled = true;
 
     const isPlan = document.getElementById('modeBtnPlan').classList.contains('active-plan');
     let timestamp    = Date.now();
@@ -1069,16 +1072,21 @@ document.getElementById('signoutBtn').addEventListener('click', () => {
 // Init（認証不要で即起動）
 // ============================================================
 window.addEventListener('load', async () => {
-    db = await openDB();
-    await renderList();
-    await updateSyncBadge();
+    try {
+        db = await openDB();
+        await renderList();
+        await updateSyncBadge();
+    } catch(err) {
+        document.getElementById('errorBanner').textContent = 'データベース初期化エラー: ' + err.message;
+        document.getElementById('errorBanner').classList.add('show');
+    }
     setTimeout(() => textInput.focus(), 150);
 
     // マイク権限キャッシュ（起動音の原因になるSR.start()は使わない）
-    if (navigator.mediaDevices?.getUserMedia) {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         navigator.mediaDevices.getUserMedia({ audio: true })
-            .then(stream => { stream.getTracks().forEach(t => t.stop()); })
-            .catch(() => {});
+            .then(function(stream) { stream.getTracks().forEach(function(t) { t.stop(); }); })
+            .catch(function() {});
     }
 
     initGIS(); // バックグラウンドでGIS初期化（同期ボタン押下に備える）
