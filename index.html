@@ -18,25 +18,6 @@
             display: flex; flex-direction: column; overflow: hidden;
         }
 
-        /* ── Login Screen ── */
-        #loginScreen {
-            flex: 1; display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            padding: 40px 32px; gap: 24px; text-align: center;
-        }
-        .login-logo { font-size: 56px; }
-        .login-title { font-size: 26px; font-weight: 700; color: #1c1c2e; letter-spacing: 2px; }
-        .login-sub { font-size: 14px; color: #888; line-height: 1.7; }
-        .login-btn {
-            margin-top: 8px;
-            background: #1c1c2e; color: white;
-            border: none; border-radius: 14px;
-            padding: 16px 36px; font-size: 16px; font-weight: 700;
-            cursor: pointer; font-family: inherit;
-            transition: transform 0.12s, opacity 0.12s;
-        }
-        .login-btn:active { transform: scale(0.96); opacity: 0.85; }
-
         /* ── App Screen ── */
         #appScreen { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
@@ -60,19 +41,33 @@
             font-size: 12px; cursor: pointer; padding: 3px 0;
         }
 
-        /* ── Loading ── */
-        .loading-state {
-            flex: 1; display: flex; align-items: center; justify-content: center;
-            flex-direction: column; gap: 14px; color: #aaa;
+        /* ── Sync Button + Badge ── */
+        .cal-btn-wrap {
+            position: relative; display: inline-flex; align-items: center;
         }
-        .spinner {
-            width: 32px; height: 32px;
-            border: 3px solid #e0e0e8;
-            border-top-color: #1c1c2e;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+        .cal-sync-btn {
+            font-size: 22px; text-decoration: none; opacity: 0.85;
+            background: none; border: none; cursor: pointer; padding: 0;
+            line-height: 1; transition: opacity 0.15s;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .cal-sync-btn:active { opacity: 0.5; }
+        .sync-badge {
+            position: absolute; top: -5px; right: -7px;
+            background: #ff3b30; color: white;
+            font-size: 10px; font-weight: 700;
+            min-width: 17px; height: 17px;
+            border-radius: 9px; padding: 0 3px;
+            display: none; align-items: center; justify-content: center;
+            border: 2px solid #1c1c2e;
+        }
+
+        /* ── Error Banner ── */
+        .error-banner {
+            background: #ff3b30; color: white;
+            padding: 10px 16px; font-size: 13px; text-align: center;
+            display: none;
+        }
+        .error-banner.show { display: block; }
 
         /* ── List ── */
         .list-container {
@@ -102,6 +97,11 @@
         }
         .entry-content { flex: 1; font-size: 15px; color: #1c1c2e; line-height: 1.55; word-break: break-word; }
         .entry-edit-btn { background: none; border: none; font-size: 16px; padding: 2px 0 2px 6px; color: #ccc; cursor: pointer; flex-shrink: 0; }
+        .pending-dot { font-size: 8px; color: #c0c0cc; vertical-align: middle; margin-left: 4px; }
+
+        /* ── Future event card ── */
+        .entry-card.future { background: #f0f6ff; border-left: 3px solid #0a84ff; }
+        .entry-card.future .entry-time { color: #0a84ff; }
 
         /* ── Input Area ── */
         .input-area {
@@ -137,6 +137,66 @@
         .submit-btn:disabled { background: #c0c0c8; }
 
         @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+        @keyframes spin   { to { transform: rotate(360deg); } }
+
+        /* ── Mode Toggle ── */
+        .mode-toggle { display: flex; gap: 6px; margin-bottom: 8px; }
+        .mode-btn {
+            flex: 1; padding: 7px 0; border-radius: 10px; border: none;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            font-family: inherit; transition: background 0.18s, color 0.18s;
+            background: #f0f0f5; color: #888;
+        }
+        .mode-btn.active-log  { background: #1c1c2e; color: white; }
+        .mode-btn.active-plan { background: #0a84ff; color: white; }
+
+        /* ── Schedule datetime row ── */
+        .schedule-row { display: none; margin-bottom: 8px; flex-direction: column; gap: 6px; }
+        .schedule-row.show { display: flex; }
+        .schedule-time-row { display: flex; align-items: center; gap: 8px; }
+        .schedule-label {
+            font-size: 11px; font-weight: 700; color: #0a84ff;
+            min-width: 28px; text-align: right; flex-shrink: 0; letter-spacing: 0.4px;
+        }
+        .schedule-input {
+            flex: 1; border: 1.5px solid #0a84ff; border-radius: 12px;
+            padding: 9px 14px; font-size: 14px; font-family: inherit;
+            outline: none; background: #f0f6ff; color: #1c1c2e;
+        }
+
+        /* ── Location button ── */
+        .loc-btn {
+            width: 44px; height: 44px; border-radius: 50%; border: none;
+            background: #f0f0f5; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; flex-shrink: 0; transition: transform 0.12s, background 0.2s;
+        }
+        .loc-btn:active { transform: scale(0.90); }
+        .loc-btn.loading { animation: pulse 1s infinite; }
+
+        /* ── Location Modal ── */
+        .loc-modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 300;
+            display: flex; align-items: flex-end;
+            opacity: 0; pointer-events: none; transition: opacity 0.22s;
+        }
+        .loc-modal-overlay.active { opacity: 1; pointer-events: all; }
+        .loc-modal {
+            background: white; border-radius: 22px 22px 0 0;
+            padding: 20px 18px;
+            padding-bottom: max(28px, env(safe-area-inset-bottom));
+            width: 100%; transform: translateY(100%);
+            transition: transform 0.28s cubic-bezier(0.32,0.72,0,1);
+        }
+        .loc-modal-overlay.active .loc-modal { transform: translateY(0); }
+        .loc-item {
+            padding: 14px 16px; border-radius: 12px; margin-bottom: 8px;
+            background: #f9f9fb; cursor: pointer; font-size: 15px;
+            border: 1.5px solid transparent; transition: border-color 0.15s, background 0.15s;
+        }
+        .loc-item:active { background: #e8f0fe; border-color: #0a84ff; }
+        .loc-item-label { font-size: 11px; color: #999; font-weight: 700; margin-bottom: 3px; }
+        .loc-item-name  { color: #1c1c2e; font-weight: 500; }
 
         /* ── Edit Modal ── */
         .modal-overlay {
@@ -184,130 +244,35 @@
             pointer-events: none; z-index: 300; white-space: nowrap;
         }
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-        /* ── Error Banner ── */
-        .error-banner {
-            background: #ff3b30; color: white;
-            padding: 10px 16px; font-size: 13px; text-align: center;
-            display: none;
-        }
-        .error-banner.show { display: block; }
-
-        /* ── Mode Toggle ── */
-        .mode-toggle {
-            display: flex; gap: 6px; margin-bottom: 8px;
-        }
-        .mode-btn {
-            flex: 1; padding: 7px 0; border-radius: 10px; border: none;
-            font-size: 13px; font-weight: 600; cursor: pointer;
-            font-family: inherit; transition: background 0.18s, color 0.18s;
-            background: #f0f0f5; color: #888;
-        }
-        .mode-btn.active-log  { background: #1c1c2e; color: white; }
-        .mode-btn.active-plan { background: #0a84ff; color: white; }
-
-        /* ── Schedule datetime row ── */
-        .schedule-row {
-            display: none; margin-bottom: 8px; flex-direction: column; gap: 6px;
-        }
-        .schedule-row.show { display: flex; }
-        .schedule-time-row {
-            display: flex; align-items: center; gap: 8px;
-        }
-        .schedule-label {
-            font-size: 11px; font-weight: 700; color: #0a84ff;
-            min-width: 28px; text-align: right; flex-shrink: 0; letter-spacing: 0.4px;
-        }
-        .schedule-input {
-            flex: 1; border: 1.5px solid #0a84ff; border-radius: 12px;
-            padding: 9px 14px; font-size: 14px; font-family: inherit;
-            outline: none; background: #f0f6ff; color: #1c1c2e;
-        }
-
-        /* ── Location button ── */
-        .loc-btn {
-            width: 44px; height: 44px; border-radius: 50%; border: none;
-            background: #f0f0f5; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 20px; flex-shrink: 0; transition: transform 0.12s, background 0.2s;
-        }
-        .loc-btn:active { transform: scale(0.90); }
-        .loc-btn.loading { animation: pulse 1s infinite; }
-
-        /* ── Location Modal ── */
-        .loc-modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 300;
-            display: flex; align-items: flex-end;
-            opacity: 0; pointer-events: none; transition: opacity 0.22s;
-        }
-        .loc-modal-overlay.active { opacity: 1; pointer-events: all; }
-        .loc-modal {
-            background: white; border-radius: 22px 22px 0 0;
-            padding: 20px 18px;
-            padding-bottom: max(28px, env(safe-area-inset-bottom));
-            width: 100%; transform: translateY(100%);
-            transition: transform 0.28s cubic-bezier(0.32,0.72,0,1);
-        }
-        .loc-modal-overlay.active .loc-modal { transform: translateY(0); }
-        .loc-item {
-            padding: 14px 16px; border-radius: 12px; margin-bottom: 8px;
-            background: #f9f9fb; cursor: pointer; font-size: 15px;
-            border: 1.5px solid transparent; transition: border-color 0.15s, background 0.15s;
-        }
-        .loc-item:active { background: #e8f0fe; border-color: #0a84ff; }
-        .loc-item-label { font-size: 11px; color: #999; font-weight: 700; margin-bottom: 3px; }
-        .loc-item-name  { color: #1c1c2e; font-weight: 500; }
-
-        /* ── Future event card ── */
-        .entry-card.future {
-            background: #f0f6ff; border-left: 3px solid #0a84ff;
-        }
-        .entry-card.future .entry-time { color: #0a84ff; }
     </style>
 </head>
 <body>
 
-<!-- ===== ① ここにClient IDを貼る ===== -->
+<!-- ===== Client ID ===== -->
 <script>
-    const CLIENT_ID = '168669644981-at642rkfpbj1v4mbjtj1rd4osqn9uea9.apps.googleusercontent.com'; // Google Cloud Console で取得したID
+    const CLIENT_ID = '168669644981-at642rkfpbj1v4mbjtj1rd4osqn9uea9.apps.googleusercontent.com';
 </script>
-<!-- ==================================== -->
-
-<!-- Splash Screen（起動時ローディング） -->
-<div id="splashScreen" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
-    <div style="font-size:52px;">📋</div>
-    <div style="font-size:22px;font-weight:700;letter-spacing:2px;color:#1c1c2e;">QuickLog</div>
-    <div style="width:32px;height:32px;border:3px solid #e0e0e8;border-top-color:#1c1c2e;border-radius:50%;animation:spin 0.8s linear infinite;margin-top:8px;"></div>
-</div>
-
-<!-- Login Screen -->
-<div id="loginScreen" style="display:none;">
-    <div class="login-logo">📋</div>
-    <div class="login-title">QuickLog</div>
-    <div class="login-sub">Googleカレンダーに<br>行動をすばやく記録するアプリ</div>
-    <button class="login-btn" id="loginBtn">Googleでサインイン</button>
-</div>
 
 <!-- App Screen -->
-<div id="appScreen" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
+<div id="appScreen" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
     <div class="header">
         <div style="display:flex;align-items:center;gap:10px;">
             <h1>QuickLog</h1>
-            <a href="https://calendar.google.com" target="_blank" style="font-size:20px;text-decoration:none;opacity:0.8;" title="Googleカレンダーを開く">📅</a>
+            <div class="cal-btn-wrap">
+                <button class="cal-sync-btn" id="calSyncBtn" title="Googleカレンダーに同期">📅</button>
+                <span class="sync-badge" id="syncBadge"></span>
+            </div>
         </div>
         <div class="header-right">
-            <span class="entry-count" id="entryCount">読込中…</span>
-            <button class="signout-btn" id="signoutBtn">ログアウト</button>
+            <span class="entry-count" id="entryCount">0件</span>
+            <button class="signout-btn" id="signoutBtn">連携解除</button>
         </div>
     </div>
 
     <div class="error-banner" id="errorBanner"></div>
 
     <div class="list-container" id="listContainer">
-        <div class="loading-state" id="loadingState">
-            <div class="spinner"></div>
-            <div>カレンダーを読み込み中…</div>
-        </div>
+        <div class="empty-state">まだ記録がありません<br><span style="font-size:32px;display:block;margin-top:10px;">📋</span></div>
     </div>
 
     <div class="input-area">
@@ -386,20 +351,69 @@
 // ============================================================
 // 設定
 // ============================================================
-const SCOPES   = 'https://www.googleapis.com/auth/calendar.events';
-const CAL_ID   = 'primary';
-const APP_TAG  = 'quicklog';          // このアプリが作ったイベントの識別タグ
-const TZ       = Intl.DateTimeFormat().resolvedOptions().timeZone;
-const LOAD_DAYS = 30;                 // 何日前まで表示するか
+const SCOPES    = 'https://www.googleapis.com/auth/calendar.events';
+const CAL_ID    = 'primary';
+const APP_TAG   = 'quicklog';
+const TZ        = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+// ============================================================
+// IndexedDB（端末内ストレージ＝一次保存先）
+// ============================================================
+const DB_NAME    = 'QuickLogDB';
+const DB_VERSION = 1;
+const STORE      = 'entries';
+let db;
+
+function openDB() {
+    return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = e => {
+            const d = e.target.result;
+            if (!d.objectStoreNames.contains(STORE)) {
+                d.createObjectStore(STORE, { keyPath: 'id' })
+                 .createIndex('timestamp', 'timestamp', { unique: false });
+            }
+        };
+        req.onsuccess = e => resolve(e.target.result);
+        req.onerror   = e => reject(e.target.error);
+    });
+}
+
+function dbPut(entry) {
+    return new Promise(resolve => {
+        const tx = db.transaction(STORE, 'readwrite');
+        tx.objectStore(STORE).put(entry);
+        tx.oncomplete = resolve;
+    });
+}
+
+function dbDelete(id) {
+    return new Promise(resolve => {
+        const tx = db.transaction(STORE, 'readwrite');
+        tx.objectStore(STORE).delete(id);
+        tx.oncomplete = resolve;
+    });
+}
+
+function getAllEntries() {
+    return new Promise(resolve => {
+        const req = db.transaction(STORE, 'readonly').objectStore(STORE).getAll();
+        req.onsuccess = () => resolve(req.result || []);
+    });
+}
+
+function genId() {
+    return `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+}
 
 // ============================================================
 // 状態
 // ============================================================
 let tokenClient;
-let accessToken      = localStorage.getItem('ql_token') || null;
-let tokenExpiry      = Number(localStorage.getItem('ql_expiry') || 0);
-let currentEditId    = null;
-let tokenRefreshTimer = null; // 自動リフレッシュ用タイマー
+let accessToken      = null;
+let tokenExpiry      = 0;
+let tokenRefreshTimer = null;
+let currentEditEntry = null;
 
 // ============================================================
 // UI ユーティリティ
@@ -426,7 +440,7 @@ function fmtTime(ts) {
 function fmtDateLabel(ts) {
     const d   = new Date(ts);
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const today    = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const entryDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
     const diff = Math.round((today - entryDay) / 86400000);
     if (diff === 0) return '今日';
@@ -449,126 +463,65 @@ function isTokenValid() {
     return accessToken && Date.now() < tokenExpiry - 60000;
 }
 
-// トークン期限の5分前に自動でサイレント再取得するタイマーをセット
-function scheduleTokenRefresh() {
-    if (tokenRefreshTimer) clearTimeout(tokenRefreshTimer);
-    const msUntilRefresh = tokenExpiry - Date.now() - 5 * 60 * 1000; // 期限5分前
-    if (msUntilRefresh > 0) {
-        tokenRefreshTimer = setTimeout(() => {
-            if (localStorage.getItem('ql_logged_in')) {
-                tokenClient.requestAccessToken({ prompt: '' });
-            }
-        }, msUntilRefresh);
+// ============================================================
+// 同期バッジ
+// ============================================================
+async function updateSyncBadge() {
+    const entries = await getAllEntries();
+    const n = entries.filter(e => e.syncStatus === 'pending' || e.syncStatus === 'delete_pending').length;
+    const badge = document.getElementById('syncBadge');
+    if (n > 0) {
+        badge.textContent = n;
+        badge.style.display = 'flex';
+    } else {
+        badge.style.display = 'none';
     }
 }
 
 // ============================================================
-// Google Identity Services
+// Google Identity Services（同期専用）
 // ============================================================
 function initGIS() {
-    if (typeof google === 'undefined') {
-        setTimeout(initGIS, 200);
-        return;
-    }
+    if (typeof google === 'undefined') { setTimeout(initGIS, 200); return; }
 
     tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
         scope: SCOPES,
         callback: async (resp) => {
-            if (resp.error) {
-                // サイレント認証失敗はエラー表示せずログイン画面へ
-                showLogin();
-                return;
-            }
+            if (resp.error) { showError('Google認証に失敗しました'); return; }
             accessToken = resp.access_token;
             tokenExpiry = Date.now() + (resp.expires_in * 1000);
-            localStorage.setItem('ql_token', accessToken);
-            localStorage.setItem('ql_expiry', String(tokenExpiry));
-            localStorage.setItem('ql_logged_in', '1');
-            scheduleTokenRefresh(); // 期限5分前に自動再取得をスケジュール
-            showApp();
-            await loadEntries();
+            scheduleTokenRefresh();
+            await doSync();
         },
     });
 
-    // 有効なトークンがあればそのままアプリ画面へ
-    if (isTokenValid()) {
-        document.getElementById('splashScreen').style.display = 'none';
-        scheduleTokenRefresh(); // 残り期限に合わせて自動リフレッシュをスケジュール
-        showApp();
-        loadEntries();
-    }
-    // 以前ログインしていた → スプラッシュ表示しつつサイレント認証を試みる
-    else if (localStorage.getItem('ql_logged_in')) {
-        showSplash();
-        // タイムアウト：4秒で応答がなければログイン画面へ
-        const silentAuthTimer = setTimeout(() => showLogin(), 12000); // モバイル回線考慮で12秒
-        const origCallback = tokenClient.callback;
-        tokenClient.callback = async (resp) => {
-            clearTimeout(silentAuthTimer);
-            tokenClient.callback = origCallback;
-            await origCallback(resp);
-        };
-        tokenClient.requestAccessToken({ prompt: '' });
-    }
-    // 初回 → ログイン画面
-    else {
-        showLogin();
+    // 前回のトークンが残っていれば復元
+    const savedToken  = localStorage.getItem('ql_token');
+    const savedExpiry = Number(localStorage.getItem('ql_expiry') || 0);
+    if (savedToken && Date.now() < savedExpiry - 60000) {
+        accessToken  = savedToken;
+        tokenExpiry  = savedExpiry;
+        scheduleTokenRefresh();
     }
 }
 
-function requestToken(prompt = '') {
-    tokenClient.requestAccessToken(prompt ? { prompt } : {});
-}
-
-async function ensureToken() {
-    if (!isTokenValid()) {
-        requestToken();
-        return false; // 再認証中
+function scheduleTokenRefresh() {
+    if (tokenRefreshTimer) clearTimeout(tokenRefreshTimer);
+    const msUntilRefresh = tokenExpiry - Date.now() - 5 * 60 * 1000;
+    if (msUntilRefresh > 0) {
+        tokenRefreshTimer = setTimeout(() => {
+            tokenClient.requestAccessToken({ prompt: '' });
+        }, msUntilRefresh);
     }
-    return true;
+    localStorage.setItem('ql_token',  accessToken);
+    localStorage.setItem('ql_expiry', String(tokenExpiry));
 }
 
 // ============================================================
-// 画面切り替え
-// ============================================================
-function showApp() {
-    document.getElementById('loginScreen').style.display = 'none';
-    const app = document.getElementById('appScreen');
-    app.style.display = 'flex';
-    setTimeout(() => document.getElementById('textInput').focus(), 300);
-    // マイク権限を起動時に一度取得してキャッシュ（毎回許可ダイアログを防ぐ）
-    // ※ SpeechRecognition.start() は iOS でシステム音（ポン）が鳴るため使わない
-    if (navigator.mediaDevices?.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ audio: true })
-            .then(stream => { stream.getTracks().forEach(t => t.stop()); })
-            .catch(() => {}); // 拒否されても無視
-    }
-}
-
-function showLogin() {
-    if (tokenRefreshTimer) { clearTimeout(tokenRefreshTimer); tokenRefreshTimer = null; }
-    accessToken = null;
-    localStorage.removeItem('ql_token');
-    localStorage.removeItem('ql_expiry');
-    localStorage.removeItem('ql_logged_in');
-    document.getElementById('splashScreen').style.display  = 'none';
-    document.getElementById('appScreen').style.display    = 'none';
-    document.getElementById('loginScreen').style.display  = 'flex';
-}
-
-function showSplash() {
-    document.getElementById('splashScreen').style.display  = 'flex';
-    document.getElementById('loginScreen').style.display  = 'none';
-    document.getElementById('appScreen').style.display    = 'none';
-}
-
-// ============================================================
-// Calendar API
+// Google Calendar API
 // ============================================================
 async function calFetch(path, options = {}) {
-    if (!isTokenValid()) { requestToken(); return null; }
-
     const res = await fetch(`https://www.googleapis.com/calendar/v3${path}`, {
         ...options,
         headers: {
@@ -577,11 +530,7 @@ async function calFetch(path, options = {}) {
             ...(options.headers || {}),
         },
     });
-
-    if (res.status === 401) {
-        requestToken();
-        return null;
-    }
+    if (res.status === 401) { accessToken = null; tokenExpiry = 0; return null; }
     if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err?.error?.message || `HTTP ${res.status}`);
@@ -590,99 +539,126 @@ async function calFetch(path, options = {}) {
     return res.json();
 }
 
-async function loadEntries() {
-    const container = document.getElementById('listContainer');
-    container.innerHTML = '<div class="loading-state"><div class="spinner"></div><div>読み込み中…</div></div>';
-
-    try {
-        const timeMin = new Date(Date.now() - LOAD_DAYS * 86400000).toISOString();
-        const timeMax = new Date(Date.now() + 30 * 86400000).toISOString(); // 未来30日まで
-
-        const params = new URLSearchParams({
-            timeMin, timeMax,
-            orderBy: 'startTime',
-            singleEvents: 'true',
-            privateExtendedProperty: `source=${APP_TAG}`,
-            maxResults: '200',
-        });
-
-        const data = await calFetch(`/calendars/${encodeURIComponent(CAL_ID)}/events?${params}`);
-        if (!data) return;
-
-        renderList(data.items || []);
-    } catch (e) {
-        showError('読み込みエラー: ' + e.message);
-        container.innerHTML = '<div class="empty-state">読み込みに失敗しました<br>再読み込みしてください</div>';
-    }
-}
-
-async function createEvent(content, timestamp, colorId = null, endTimestamp = null) {
-    const dt    = new Date(timestamp).toISOString();
-    const dtEnd = new Date(endTimestamp || timestamp + 60000).toISOString();
-
+async function gcalCreate(entry) {
+    const dt    = new Date(entry.timestamp).toISOString();
+    const dtEnd = new Date(entry.endTimestamp || entry.timestamp + 60000).toISOString();
     return calFetch(`/calendars/${encodeURIComponent(CAL_ID)}/events`, {
         method: 'POST',
         body: JSON.stringify({
-            summary: content,
+            summary: entry.content,
             start: { dateTime: dt, timeZone: TZ },
             end:   { dateTime: dtEnd, timeZone: TZ },
             extendedProperties: { private: { source: APP_TAG } },
-            ...(colorId ? { colorId } : {}),
+            ...(entry.colorId ? { colorId: entry.colorId } : {}),
         }),
     });
 }
 
-async function updateEvent(eventId, content, timestamp, endTimestamp = null) {
-    const dt    = new Date(timestamp).toISOString();
-    const dtEnd = new Date(endTimestamp || timestamp + 60000).toISOString();
-
-    return calFetch(`/calendars/${encodeURIComponent(CAL_ID)}/events/${eventId}`, {
+async function gcalUpdate(entry) {
+    const dt    = new Date(entry.timestamp).toISOString();
+    const dtEnd = new Date(entry.endTimestamp || entry.timestamp + 60000).toISOString();
+    return calFetch(`/calendars/${encodeURIComponent(CAL_ID)}/events/${entry.gcalId}`, {
         method: 'PUT',
         body: JSON.stringify({
-            summary: content,
+            summary: entry.content,
             start: { dateTime: dt, timeZone: TZ },
             end:   { dateTime: dtEnd, timeZone: TZ },
             extendedProperties: { private: { source: APP_TAG } },
+            ...(entry.colorId ? { colorId: entry.colorId } : {}),
         }),
     });
 }
 
-async function deleteEvent(eventId) {
-    return calFetch(`/calendars/${encodeURIComponent(CAL_ID)}/events/${eventId}`, { method: 'DELETE' });
+async function gcalDelete(gcalId) {
+    return calFetch(`/calendars/${encodeURIComponent(CAL_ID)}/events/${gcalId}`, { method: 'DELETE' });
 }
 
 // ============================================================
-// Render
+// 同期処理（📅ボタン → GCal一括反映）
 // ============================================================
-function renderList(events) {
-    const container = document.getElementById('listContainer');
-    document.getElementById('entryCount').textContent = `${events.length}件`;
+async function requestSync() {
+    if (isTokenValid()) {
+        await doSync();
+    } else {
+        // 認証→コールバック内で doSync() が呼ばれる
+        tokenClient.requestAccessToken({ prompt: '' });
+    }
+}
 
-    if (events.length === 0) {
+async function doSync() {
+    const entries = await getAllEntries();
+    const pending = entries.filter(e => e.syncStatus === 'pending' || e.syncStatus === 'delete_pending');
+
+    if (pending.length === 0) { showToast('同期済みです ✓'); return; }
+
+    const calBtn = document.getElementById('calSyncBtn');
+    calBtn.textContent = '⏳';
+
+    let synced = 0, failed = 0;
+
+    for (const entry of pending) {
+        try {
+            if (entry.syncStatus === 'delete_pending') {
+                if (entry.gcalId) await gcalDelete(entry.gcalId);
+                await dbDelete(entry.id);
+            } else {
+                // pending（新規 or 更新）
+                if (entry.gcalId) {
+                    await gcalUpdate(entry);
+                } else {
+                    const result = await gcalCreate(entry);
+                    if (result?.id) entry.gcalId = result.id;
+                }
+                entry.syncStatus = 'synced';
+                await dbPut(entry);
+            }
+            synced++;
+        } catch {
+            failed++;
+        }
+    }
+
+    calBtn.textContent = '📅';
+    await updateSyncBadge();
+
+    if (failed > 0) showError(`${synced}件同期、${failed}件失敗`);
+    else            showToast(`${synced}件をGoogleカレンダーに同期しました ✓`);
+}
+
+document.getElementById('calSyncBtn').addEventListener('click', requestSync);
+
+// ============================================================
+// Render（IndexedDB から直接表示）
+// ============================================================
+async function renderList() {
+    const entries = await getAllEntries();
+    // delete_pending（削除待ち）は一覧から除外
+    const visible = entries.filter(e => e.syncStatus !== 'delete_pending');
+
+    const container = document.getElementById('listContainer');
+    document.getElementById('entryCount').textContent = `${visible.length}件`;
+
+    if (visible.length === 0) {
         container.innerHTML = '<div class="empty-state">まだ記録がありません<br><span style="font-size:32px;display:block;margin-top:10px;">📋</span></div>';
         return;
     }
 
-    const now = Date.now();
-
-    // 未来の予定を上、過去の記録を新しい順に
-    const future = [...events].filter(ev => new Date(ev.start.dateTime || ev.start.date).getTime() > now)
-                              .sort((a, b) => new Date(a.start.dateTime) - new Date(b.start.dateTime));
-    const past   = [...events].filter(ev => new Date(ev.start.dateTime || ev.start.date).getTime() <= now)
-                              .sort((a, b) => new Date(b.start.dateTime) - new Date(a.start.dateTime));
+    const now    = Date.now();
+    const future = visible.filter(e => e.timestamp > now).sort((a,b) => a.timestamp - b.timestamp);
+    const past   = visible.filter(e => e.timestamp <= now).sort((a,b) => b.timestamp - a.timestamp);
     const sorted = [...future, ...past];
 
     container.innerHTML = '';
     let lastLabel = null;
 
-    sorted.forEach(ev => {
-        const ts       = new Date(ev.start.dateTime || ev.start.date).getTime();
-        const isFuture = ts > now;
-        const label    = isFuture ? '⏰ 予定' : fmtDateLabel(ts);
+    sorted.forEach(entry => {
+        const isFuture  = entry.timestamp > now;
+        const isPending = entry.syncStatus === 'pending';
+        const label     = isFuture ? '⏰ 予定' : fmtDateLabel(entry.timestamp);
 
         if (label !== lastLabel) {
             const hdr = document.createElement('div');
-            hdr.className = 'date-group-header';
+            hdr.className   = 'date-group-header';
             hdr.textContent = label;
             container.appendChild(hdr);
             lastLabel = label;
@@ -691,21 +667,20 @@ function renderList(events) {
         const card = document.createElement('div');
         card.className = 'entry-card' + (isFuture ? ' future' : '');
         card.innerHTML = `
-            <div class="entry-time">${isFuture ? fmtDateLabel(ts).replace('⏰ ','') + '<br>' : ''}${fmtTime(ts)}</div>
-            <div class="entry-content">${escHtml(ev.summary || '')}</div>
+            <div class="entry-time">${isFuture ? fmtDateLabel(entry.timestamp).replace('⏰ ','') + '<br>' : ''}${fmtTime(entry.timestamp)}</div>
+            <div class="entry-content">${escHtml(entry.content)}${isPending ? '<span class="pending-dot">●</span>' : ''}</div>
             <button class="entry-edit-btn" aria-label="編集">✏️</button>
         `;
 
         const editBtn = card.querySelector('.entry-edit-btn');
-        editBtn.addEventListener('click', e => { e.stopPropagation(); openEditModal(ev, ts); });
-        card.addEventListener('click', () => openEditModal(ev, ts));
-
+        editBtn.addEventListener('click', e => { e.stopPropagation(); openEditModal(entry); });
+        card.addEventListener('click', () => openEditModal(entry));
         container.appendChild(card);
     });
 }
 
 // ============================================================
-// Submit
+// Submit（IndexedDB に即保存）
 // ============================================================
 const textInput = document.getElementById('textInput');
 const submitBtn = document.getElementById('submitBtn');
@@ -727,9 +702,10 @@ async function submitEntry() {
     if (!content) return;
 
     const isPlan = document.getElementById('modeBtnPlan').classList.contains('active-plan');
-
-    let timestamp = Date.now();
+    let timestamp    = Date.now();
     let endTimestamp = null;
+    let colorId      = null;
+
     if (isPlan) {
         const dtVal    = document.getElementById('scheduleInput').value;
         const dtEndVal = document.getElementById('scheduleEndInput').value;
@@ -742,27 +718,28 @@ async function submitEntry() {
                 showError('終了日時は開始日時より後にしてください'); return;
             }
         }
+        colorId = '3'; // オレンジ（予定）
     }
 
-    submitBtn.disabled = true;
-    submitBtn.textContent = '…';
+    const entry = {
+        id:          genId(),
+        gcalId:      null,
+        content,
+        timestamp,
+        endTimestamp,
+        colorId,
+        syncStatus:  'pending',
+    };
 
-    try {
-        // 予定はcolorId "3"（タンジェリン＝オレンジ）、記録はデフォルト
-        await createEvent(content, timestamp, isPlan ? '3' : null, endTimestamp);
-        textInput.value = '';
-        textInput.style.height = 'auto';
-        if (isPlan) setMode('log'); // 予定送信後は記録モードに戻す
-        textInput.focus();
-        await loadEntries();
-        document.getElementById('listContainer').scrollTop = 0;
-        showToast(isPlan ? '予定を追加しました ✓' : '記録しました ✓');
-    } catch (e) {
-        showError('保存エラー: ' + e.message);
-    } finally {
-        submitBtn.textContent = '↑';
-        submitBtn.disabled = !textInput.value.trim();
-    }
+    await dbPut(entry);
+    textInput.value = '';
+    textInput.style.height = 'auto';
+    if (isPlan) setMode('log');
+    textInput.focus();
+    await renderList();
+    await updateSyncBadge();
+    document.getElementById('listContainer').scrollTop = 0;
+    showToast(isPlan ? '予定を追加しました ✓' : '記録しました ✓');
 }
 
 // ============================================================
@@ -807,12 +784,10 @@ const modeBtnPlan   = document.getElementById('modeBtnPlan');
 const scheduleRow   = document.getElementById('scheduleRow');
 const scheduleInput = document.getElementById('scheduleInput');
 
-// 開始時刻から終了時刻（+1時間）を自動セット
 function syncEndTime() {
     const startVal = scheduleInput.value;
     if (!startVal) return;
     const endInput = document.getElementById('scheduleEndInput');
-    // 終了が未入力 or 開始以前の場合のみ上書き
     if (!endInput.value || new Date(endInput.value) <= new Date(startVal)) {
         const d   = new Date(new Date(startVal).getTime() + 60 * 60 * 1000);
         const pad = n => String(n).padStart(2,'0');
@@ -827,19 +802,18 @@ function setMode(mode) {
         modeBtnLog.classList.remove('active-plan');
         modeBtnPlan.classList.remove('active-plan');
         scheduleRow.classList.remove('show');
-        document.getElementById('textInput').placeholder = '何をした？（Enterで即記録）';
+        textInput.placeholder = '何をした？（Enterで即記録）';
     } else {
         modeBtnPlan.classList.add('active-plan');
         modeBtnLog.classList.remove('active-log');
         scheduleRow.classList.add('show');
-        // デフォルト：明日の現在時刻
         if (!scheduleInput.value) {
             const d   = new Date(Date.now() + 86400000);
             const pad = n => String(n).padStart(2,'0');
             scheduleInput.value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
         }
-        syncEndTime(); // 終了時刻を開始+1時間で自動セット
-        document.getElementById('textInput').placeholder = '予定の内容を入力';
+        syncEndTime();
+        textInput.placeholder = '予定の内容を入力';
     }
 }
 
@@ -853,7 +827,6 @@ const locBtn          = document.getElementById('locBtn');
 const locModalOverlay = document.getElementById('locModalOverlay');
 
 function closeLocModal() { locModalOverlay.classList.remove('active'); }
-
 document.getElementById('locModalClose').addEventListener('click', closeLocModal);
 locModalOverlay.addEventListener('click', e => { if (e.target === locModalOverlay) closeLocModal(); });
 
@@ -876,23 +849,19 @@ locBtn.addEventListener('click', async () => {
         const data = await res.json();
         const addr = data.address || {};
 
-        // 候補を組み立て
         const candidates = [];
         const place = addr.amenity || addr.shop || addr.office || addr.tourism || addr.leisure || addr.building;
         const road  = addr.road || addr.pedestrian || addr.footway;
         const area  = addr.suburb || addr.neighbourhood || addr.quarter || addr.city_district;
         const city  = addr.city || addr.town || addr.village || addr.county;
 
-        if (place)             candidates.push({ label: '施設名',       name: place });
-        if (place && road)     candidates.push({ label: '施設＋通り',    name: `${place}（${road}）` });
-        if (road && city)      candidates.push({ label: 'エリア',        name: `${road}、${area || city}` });
-        if (city)              candidates.push({ label: '市区町村',      name: area ? `${area}、${city}` : city });
-
-        if (candidates.length === 0) {
+        if (place)             candidates.push({ label: '施設名',    name: place });
+        if (place && road)     candidates.push({ label: '施設＋通り', name: `${place}（${road}）` });
+        if (road && city)      candidates.push({ label: 'エリア',     name: `${road}、${area || city}` });
+        if (city)              candidates.push({ label: '市区町村',   name: area ? `${area}、${city}` : city });
+        if (candidates.length === 0)
             candidates.push({ label: '取得した住所', name: data.display_name?.split(',')[0] || '不明' });
-        }
 
-        // モーダル表示
         const container = document.getElementById('locCandidates');
         container.innerHTML = '';
         candidates.forEach(c => {
@@ -900,14 +869,13 @@ locBtn.addEventListener('click', async () => {
             item.className = 'loc-item';
             item.innerHTML = `<div class="loc-item-label">${c.label}</div><div class="loc-item-name">${c.name}</div>`;
             item.addEventListener('click', () => {
-                const input = document.getElementById('textInput');
-                const sep   = input.value.trim() ? ' ' : '';
-                input.value += sep + c.name;
-                input.style.height = 'auto';
-                input.style.height = Math.min(input.scrollHeight, 110) + 'px';
-                document.getElementById('submitBtn').disabled = !input.value.trim();
+                const sep = textInput.value.trim() ? ' ' : '';
+                textInput.value += sep + c.name;
+                textInput.style.height = 'auto';
+                textInput.style.height = Math.min(textInput.scrollHeight, 110) + 'px';
+                submitBtn.disabled = !textInput.value.trim();
                 closeLocModal();
-                input.focus();
+                textInput.focus();
             });
             container.appendChild(item);
         });
@@ -926,24 +894,21 @@ locBtn.addEventListener('click', async () => {
 });
 
 // ============================================================
-// Edit Modal
+// Edit Modal（IndexedDB エントリを編集）
 // ============================================================
 const modalOverlay = document.getElementById('modalOverlay');
 
-function openEditModal(ev, ts) {
-    currentEditId = ev.id;
-    document.getElementById('editContent').value  = ev.summary || '';
-    document.getElementById('editDatetime').value = toDatetimeLocal(ts);
-    // 終了時刻をセット（カレンダーに記録済みの値 or フォールバックで+1時間）
-    const endTs = ev.end?.dateTime
-        ? new Date(ev.end.dateTime).getTime()
-        : ts + 60 * 60 * 1000;
+function openEditModal(entry) {
+    currentEditEntry = entry;
+    document.getElementById('editContent').value  = entry.content;
+    document.getElementById('editDatetime').value = toDatetimeLocal(entry.timestamp);
+    const endTs = entry.endTimestamp || entry.timestamp + 60 * 60 * 1000;
     document.getElementById('editEndDatetime').value = toDatetimeLocal(endTs);
     modalOverlay.classList.add('active');
     setTimeout(() => document.getElementById('editContent').focus(), 300);
 }
 
-function closeModal() { modalOverlay.classList.remove('active'); currentEditId = null; }
+function closeModal() { modalOverlay.classList.remove('active'); currentEditEntry = null; }
 
 document.getElementById('modalClose').addEventListener('click', closeModal);
 modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeModal(); });
@@ -957,43 +922,66 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     let endTs = null;
     if (dtEndVal) {
         endTs = new Date(dtEndVal).getTime();
-        if (isNaN(endTs) || endTs <= startTs) {
-            showError('終了日時は開始日時より後にしてください'); return;
-        }
+        if (isNaN(endTs) || endTs <= startTs) { showError('終了日時は開始日時より後にしてください'); return; }
     }
-    try {
-        await updateEvent(currentEditId, content, startTs, endTs);
-        closeModal();
-        await loadEntries();
-        showToast('更新しました ✓');
-    } catch (e) { showError('更新エラー: ' + e.message); }
+    const updated = { ...currentEditEntry, content, timestamp: startTs, endTimestamp: endTs, syncStatus: 'pending' };
+    await dbPut(updated);
+    closeModal();
+    await renderList();
+    await updateSyncBadge();
+    showToast('更新しました ✓');
 });
 
 document.getElementById('deleteBtn').addEventListener('click', async () => {
-    if (!confirm('この記録を削除しますか？\n（Googleカレンダーからも削除されます）')) return;
-    try {
-        await deleteEvent(currentEditId);
-        closeModal();
-        await loadEntries();
-        showToast('削除しました');
-    } catch (e) { showError('削除エラー: ' + e.message); }
-});
-
-// ============================================================
-// Login / Logout
-// ============================================================
-document.getElementById('loginBtn').addEventListener('click', () => requestToken('consent'));
-document.getElementById('signoutBtn').addEventListener('click', () => {
-    if (confirm('ログアウトしますか？')) {
-        google.accounts.oauth2.revoke(accessToken, () => {});
-        showLogin();
+    if (!confirm('この記録を削除しますか？')) return;
+    const entry = currentEditEntry;
+    if (entry.gcalId) {
+        // Google Calendarに同期済み → 次回同期時に削除
+        await dbPut({ ...entry, syncStatus: 'delete_pending' });
+    } else {
+        // ローカルのみ → 即削除
+        await dbDelete(entry.id);
     }
+    closeModal();
+    await renderList();
+    await updateSyncBadge();
+    showToast('削除しました');
 });
 
 // ============================================================
-// Init
+// 連携解除ボタン
 // ============================================================
-window.addEventListener('load', initGIS);
+document.getElementById('signoutBtn').addEventListener('click', () => {
+    if (!confirm('Google連携を解除しますか？\n（ローカルの記録はそのまま残ります）')) return;
+    if (accessToken && typeof google !== 'undefined') {
+        google.accounts.oauth2.revoke(accessToken, () => {});
+    }
+    accessToken = null;
+    tokenExpiry = 0;
+    localStorage.removeItem('ql_token');
+    localStorage.removeItem('ql_expiry');
+    if (tokenRefreshTimer) { clearTimeout(tokenRefreshTimer); tokenRefreshTimer = null; }
+    showToast('Google連携を解除しました');
+});
+
+// ============================================================
+// Init（認証不要で即起動）
+// ============================================================
+window.addEventListener('load', async () => {
+    db = await openDB();
+    await renderList();
+    await updateSyncBadge();
+    setTimeout(() => textInput.focus(), 150);
+
+    // マイク権限キャッシュ（起動音の原因になるSR.start()は使わない）
+    if (navigator.mediaDevices?.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => { stream.getTracks().forEach(t => t.stop()); })
+            .catch(() => {});
+    }
+
+    initGIS(); // バックグラウンドでGIS初期化（同期ボタン押下に備える）
+});
 </script>
 </body>
 </html>
