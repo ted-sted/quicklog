@@ -378,9 +378,10 @@ const LOAD_DAYS = 30;                 // 何日前まで表示するか
 // 状態
 // ============================================================
 let tokenClient;
-let accessToken   = localStorage.getItem('ql_token') || null;
-let tokenExpiry   = Number(localStorage.getItem('ql_expiry') || 0);
-let currentEditId = null;
+let accessToken      = localStorage.getItem('ql_token') || null;
+let tokenExpiry      = Number(localStorage.getItem('ql_expiry') || 0);
+let currentEditId    = null;
+let tokenRefreshTimer = null; // 自動リフレッシュ用タイマー
 
 // ============================================================
 // UI ユーティリティ
@@ -430,6 +431,19 @@ function isTokenValid() {
     return accessToken && Date.now() < tokenExpiry - 60000;
 }
 
+// トークン期限の5分前に自動でサイレント再取得するタイマーをセット
+function scheduleTokenRefresh() {
+    if (tokenRefreshTimer) clearTimeout(tokenRefreshTimer);
+    const msUntilRefresh = tokenExpiry - Date.now() - 5 * 60 * 1000; // 期限5分前
+    if (msUntilRefresh > 0) {
+        tokenRefreshTimer = setTimeout(() => {
+            if (localStorage.getItem('ql_logged_in')) {
+                tokenClient.requestAccessToken({ prompt: '' });
+            }
+        }, msUntilRefresh);
+    }
+}
+
 // ============================================================
 // Google Identity Services
 // ============================================================
@@ -453,6 +467,7 @@ function initGIS() {
             localStorage.setItem('ql_token', accessToken);
             localStorage.setItem('ql_expiry', String(tokenExpiry));
             localStorage.setItem('ql_logged_in', '1');
+            scheduleTokenRefresh(); // 期限5分前に自動再取得をスケジュール
             showApp();
             await loadEntries();
         },
@@ -461,6 +476,7 @@ function initGIS() {
     // 有効なトークンがあればそのままアプリ画面へ
     if (isTokenValid()) {
         document.getElementById('splashScreen').style.display = 'none';
+        scheduleTokenRefresh(); // 残り期限に合わせて自動リフレッシュをスケジュール
         showApp();
         loadEntries();
     }
@@ -468,7 +484,7 @@ function initGIS() {
     else if (localStorage.getItem('ql_logged_in')) {
         showSplash();
         // タイムアウト：4秒で応答がなければログイン画面へ
-        const silentAuthTimer = setTimeout(() => showLogin(), 4000);
+        const silentAuthTimer = setTimeout(() => showLogin(), 12000); // モバイル回線考慮で12秒
         const origCallback = tokenClient.callback;
         tokenClient.callback = async (resp) => {
             clearTimeout(silentAuthTimer);
@@ -504,26 +520,16 @@ function showApp() {
     app.style.display = 'flex';
     setTimeout(() => document.getElementById('textInput').focus(), 300);
     // マイク権限を起動時に一度取得してキャッシュ（毎回許可ダイアログを防ぐ）
+    // ※ SpeechRecognition.start() は iOS でシステム音（ポン）が鳴るため使わない
     if (navigator.mediaDevices?.getUserMedia) {
         navigator.mediaDevices.getUserMedia({ audio: true })
-            .then(stream => {
-                stream.getTracks().forEach(t => t.stop());
-                // Web Speech API も事前に起動→即停止してiOS権限キャッシュを温める
-                const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-                if (SR) {
-                    const warmup = new SR();
-                    warmup.lang = 'ja-JP';
-                    warmup.onresult = () => {};
-                    warmup.onerror = () => {};
-                    warmup.onend = () => {};
-                    try { warmup.start(); setTimeout(() => { try { warmup.stop(); } catch(e){} }, 200); } catch(e) {}
-                }
-            })
+            .then(stream => { stream.getTracks().forEach(t => t.stop()); })
             .catch(() => {}); // 拒否されても無視
     }
 }
 
 function showLogin() {
+    if (tokenRefreshTimer) { clearTimeout(tokenRefreshTimer); tokenRefreshTimer = null; }
     accessToken = null;
     localStorage.removeItem('ql_token');
     localStorage.removeItem('ql_expiry');
